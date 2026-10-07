@@ -1,0 +1,6 @@
+{
+  "name": "Khan Marriage Bureau",
+  "description": "Premium matrimonial bureau app for candidate registrations, dossier profiles, and verified match searches.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
