@@ -77,6 +77,27 @@ fun GenderSelectionScreen(
     BackHandler { onBack() }
   }
 
+  // Smooth continuous slow bouncing animation for cards and overlapping avatars
+  val infiniteTransition = rememberInfiniteTransition(label = "CardBounceTransition")
+  val bounceOffsetDulha by infiniteTransition.animateFloat(
+    initialValue = 0f,
+    targetValue = -7f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 1800, easing = FastOutSlowInEasing),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "DulhaBounce"
+  )
+  val bounceOffsetDulhan by infiniteTransition.animateFloat(
+    initialValue = -5f,
+    targetValue = 2f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(durationMillis = 2000, easing = FastOutSlowInEasing),
+      repeatMode = RepeatMode.Reverse
+    ),
+    label = "DulhanBounce"
+  )
+
   Column(
     modifier = modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -89,18 +110,19 @@ fun GenderSelectionScreen(
       modifier = Modifier.fillMaxWidth()
     )
 
-    // Middle: DULHA & DULHAN Cards centered perfectly between header and footer
+    // Middle: DULHA & DULHAN Cards centered with clean equal padding and divider separation
     Column(
       modifier = Modifier
         .fillMaxWidth()
         .weight(1f)
-        .padding(horizontal = 16.dp),
+        .padding(horizontal = 16.dp, vertical = 8.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // 1. DULHA (GROOM) CARD (Yellow Gold Gradient with animated trim glow)
+      // 1. DULHA (GROOM) CARD (Yellow Gold Gradient with slow smooth bounce animation)
       Box(
         modifier = Modifier
+          .offset(y = bounceOffsetDulha.dp)
           .width(185.dp)
           .height(168.dp)
           .testTag("select_dulha_card")
@@ -196,15 +218,16 @@ fun GenderSelectionScreen(
         }
       }
 
-      // Middle Jewel Divider between cards
+      // Middle Jewel Divider between cards (Equal top and bottom safe padding so it never touches cards)
       JewelDivider(
-        modifier = Modifier.padding(top = 16.dp, bottom = 26.dp),
+        modifier = Modifier.padding(vertical = 24.dp),
         width = 195.dp
       )
 
-      // 2. DULHAN (BRIDE) CARD (Rose Gold Gradient with animated trim glow)
+      // 2. DULHAN (BRIDE) CARD (Rose Gold Gradient with alternating slow smooth bounce animation)
       Box(
         modifier = Modifier
+          .offset(y = bounceOffsetDulhan.dp)
           .width(185.dp)
           .height(168.dp)
           .testTag("select_dulhan_card")

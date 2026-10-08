@@ -39,10 +39,9 @@ fun KhanApp(
       .fillMaxSize()
       .background(RoyalBlack)
   ) {
-    // Cinematic falling rose petals rain and background image (shown on Home/GenderSelection, Portal, Registration, and SearchProfiles)
+    // Cinematic falling rose petals rain and background image (only shown on Home/GenderSelection, Portal, and SearchProfiles)
     val showDecor = currentScreen is KhanScreen.GenderSelection ||
         currentScreen is KhanScreen.Portal ||
-        currentScreen is KhanScreen.Registration ||
         currentScreen is KhanScreen.SearchProfiles
     
     if (showDecor) {
@@ -113,24 +112,21 @@ fun KhanApp(
         }
 
         is KhanScreen.Registration -> {
-          Box(modifier = Modifier.fillMaxSize()) {
-            RosePetalsRainOverlay()
-            RegistrationFormScreen(
-              gender = screen.gender,
-              onSubmitSuccess = {
-                viewModel.navigateTo(KhanScreen.SearchProfiles())
-              },
-              onNavigateToSearch = {
-                viewModel.navigateTo(KhanScreen.SearchProfiles())
-              },
-              onBack = {
-                viewModel.navigateBack()
-              },
-              onSaveDossier = { newDossier ->
-                viewModel.saveDossier(newDossier)
-              }
-            )
-          }
+          RegistrationFormScreen(
+            gender = screen.gender,
+            onSubmitSuccess = {
+              viewModel.navigateTo(KhanScreen.SearchProfiles())
+            },
+            onNavigateToSearch = {
+              viewModel.navigateTo(KhanScreen.SearchProfiles())
+            },
+            onBack = {
+              viewModel.navigateBack()
+            },
+            onSaveDossier = { newDossier ->
+              viewModel.saveDossier(newDossier)
+            }
+          )
         }
 
         is KhanScreen.SearchProfiles -> {
