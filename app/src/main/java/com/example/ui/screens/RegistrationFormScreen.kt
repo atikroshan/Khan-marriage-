@@ -40,11 +40,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -127,6 +130,7 @@ fun RegistrationFormScreen(
   var isSubmitting by remember { mutableStateOf(false) }
   var showSuccessDialog by remember { mutableStateOf(false) }
   var createdDossierCode by remember { mutableStateOf("") }
+  var lastSyncResult by remember { mutableStateOf<com.example.data.GoogleSheetsDriveService.SyncResult?>(null) }
   var showExtraDetails by remember { mutableStateOf(false) }
 
   // City Options as requested
@@ -158,6 +162,21 @@ fun RegistrationFormScreen(
 
   // Occupation Options (Dynamic: Businessman / Businesswoman, Homemaker only for Dulhan)
   val isDulhan = gender.equals("Dulhan", ignoreCase = true)
+  val blackTextFieldColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = GoldLight,
+    unfocusedBorderColor = GoldLight.copy(alpha = 0.5f),
+    focusedTextColor = Color(0xFFFFFFFF),
+    unfocusedTextColor = Color(0xFFFFFFFF),
+    focusedLabelColor = GoldLight,
+    unfocusedLabelColor = Color(0xFFCCCCCC),
+    focusedPlaceholderColor = Color(0xFF888888),
+    unfocusedPlaceholderColor = Color(0xFF888888),
+    focusedContainerColor = Color(0xFF0F110F),
+    unfocusedContainerColor = Color(0xFF0F110F),
+    focusedLeadingIconColor = GoldLight,
+    unfocusedLeadingIconColor = GoldLight.copy(alpha = 0.8f),
+    cursorColor = GoldLight
+  )
   val occupationOptions = buildList {
     add(if (isDulhan) "Businesswoman" else "Businessman")
     add("Doctor")
@@ -233,6 +252,7 @@ fun RegistrationFormScreen(
   Column(
     modifier = modifier
       .fillMaxSize()
+      .background(GoldPrimary)
   ) {
     // Top Header with Back button and Bureau branding
     KhanHeader(
@@ -267,19 +287,12 @@ fun RegistrationFormScreen(
         OutlinedTextField(
           value = customCityName,
           onValueChange = { customCityName = it },
-          label = { Text("Enter City / Town Name", color = TextSand) },
-          placeholder = { Text("e.g. Kolhapur, Latur, Beed...", color = TextSand.copy(alpha = 0.5f)) },
+          label = { Text("Enter City / Town Name", color = GoldLight) },
+          placeholder = { Text("e.g. Kolhapur, Latur, Beed...", color = Color(0xFF888888)) },
           leadingIcon = {
-            Icon(Icons.Default.LocationCity, contentDescription = null, tint = GoldPrimary)
+            Icon(Icons.Default.LocationCity, contentDescription = null, tint = GoldLight)
           },
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GoldPrimary,
-            unfocusedBorderColor = GoldPrimary.copy(alpha = 0.35f),
-            focusedTextColor = TextIvory,
-            unfocusedTextColor = TextIvory,
-            focusedContainerColor = SurfaceDark,
-            unfocusedContainerColor = SurfaceDark
-          ),
+          colors = blackTextFieldColors,
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier
             .fillMaxWidth()
@@ -325,19 +338,12 @@ fun RegistrationFormScreen(
         OutlinedTextField(
           value = customOccupationName,
           onValueChange = { customOccupationName = it },
-          label = { Text("Enter Occupation Title", color = TextSand) },
-          placeholder = { Text("e.g. Pilot, Journalist, Event Planner...", color = TextSand.copy(alpha = 0.5f)) },
+          label = { Text("Enter Occupation Title", color = GoldLight) },
+          placeholder = { Text("e.g. Pilot, Journalist, Event Planner...", color = Color(0xFF888888)) },
           leadingIcon = {
-            Icon(Icons.Default.WorkOutline, contentDescription = null, tint = GoldPrimary)
+            Icon(Icons.Default.WorkOutline, contentDescription = null, tint = GoldLight)
           },
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GoldPrimary,
-            unfocusedBorderColor = GoldPrimary.copy(alpha = 0.35f),
-            focusedTextColor = TextIvory,
-            unfocusedTextColor = TextIvory,
-            focusedContainerColor = SurfaceDark,
-            unfocusedContainerColor = SurfaceDark
-          ),
+          colors = blackTextFieldColors,
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier
             .fillMaxWidth()
@@ -361,19 +367,12 @@ fun RegistrationFormScreen(
         OutlinedTextField(
           value = customEducationName,
           onValueChange = { customEducationName = it },
-          label = { Text("Enter Qualification / Degree", color = TextSand) },
-          placeholder = { Text("e.g. B.Pharm, DMLT, B.Des, B.Voc...", color = TextSand.copy(alpha = 0.5f)) },
+          label = { Text("Enter Qualification / Degree", color = GoldLight) },
+          placeholder = { Text("e.g. B.Pharm, DMLT, B.Des, B.Voc...", color = Color(0xFF888888)) },
           leadingIcon = {
-            Icon(Icons.Default.School, contentDescription = null, tint = GoldPrimary)
+            Icon(Icons.Default.School, contentDescription = null, tint = GoldLight)
           },
-          colors = OutlinedTextFieldDefaults.colors(
-            focusedBorderColor = GoldPrimary,
-            unfocusedBorderColor = GoldPrimary.copy(alpha = 0.35f),
-            focusedTextColor = TextIvory,
-            unfocusedTextColor = TextIvory,
-            focusedContainerColor = SurfaceDark,
-            unfocusedContainerColor = SurfaceDark
-          ),
+          colors = blackTextFieldColors,
           shape = RoundedCornerShape(14.dp),
           modifier = Modifier
             .fillMaxWidth()
@@ -424,18 +423,11 @@ fun RegistrationFormScreen(
           OutlinedTextField(
             value = candidateName,
             onValueChange = { candidateName = it },
-            label = { Text("Candidate Full Name", color = TextSand) },
+            label = { Text("Candidate Full Name", color = GoldLight) },
             leadingIcon = {
-              Icon(Icons.Default.Person, contentDescription = null, tint = GoldPrimary)
+              Icon(Icons.Default.Person, contentDescription = null, tint = GoldLight)
             },
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = GoldPrimary,
-              unfocusedBorderColor = GoldPrimary.copy(alpha = 0.35f),
-              focusedTextColor = TextIvory,
-              unfocusedTextColor = TextIvory,
-              focusedContainerColor = SurfaceDark,
-              unfocusedContainerColor = SurfaceDark
-            ),
+            colors = blackTextFieldColors,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
               .fillMaxWidth()
@@ -446,19 +438,12 @@ fun RegistrationFormScreen(
           OutlinedTextField(
             value = contactPhone,
             onValueChange = { contactPhone = it },
-            label = { Text("WhatsApp / Contact Phone", color = TextSand) },
+            label = { Text("WhatsApp / Contact Phone", color = GoldLight) },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
             leadingIcon = {
-              Icon(Icons.Default.Phone, contentDescription = null, tint = GoldPrimary)
+              Icon(Icons.Default.Phone, contentDescription = null, tint = GoldLight)
             },
-            colors = OutlinedTextFieldDefaults.colors(
-              focusedBorderColor = GoldPrimary,
-              unfocusedBorderColor = GoldPrimary.copy(alpha = 0.35f),
-              focusedTextColor = TextIvory,
-              unfocusedTextColor = TextIvory,
-              focusedContainerColor = SurfaceDark,
-              unfocusedContainerColor = SurfaceDark
-            ),
+            colors = blackTextFieldColors,
             shape = RoundedCornerShape(14.dp),
             modifier = Modifier
               .fillMaxWidth()
@@ -524,13 +509,41 @@ fun RegistrationFormScreen(
 
             isSubmitting = true
             scope.launch {
-              val codePrefix = if (gender == "Dulhan") "F" else "M"
-              val generatedCode = "KMB-2026-$codePrefix${Random.nextInt(100, 999)}"
+              val db = AppDatabase.getDatabase(context, scope)
+              val currentCount = db.dossierDao().getCount()
+              val nextSeq = currentCount + 1
+              val generatedCode = com.example.data.GoogleSheetsDriveService.formatSerialCode(nextSeq)
               val ageNumber = selectedAge.filter { it.isDigit() }.toIntOrNull() ?: 24
+
+              // 1. Save photo files locally so Coil in SearchProfilesScreen can always render them instantly
+              val photoDir = java.io.File(context.filesDir, "candidate_photos").apply { mkdirs() }
+              val photo1File = java.io.File(photoDir, "${generatedCode}_1.jpg")
+              val photo2File = java.io.File(photoDir, "${generatedCode}_2.jpg")
+
+              val bytes1 = com.example.data.GoogleSheetsDriveService.readImageBytes(
+                context = context,
+                imageUriString = image1Uri,
+                serialCode = generatedCode,
+                photoIndex = 1,
+                gender = gender
+              )
+              photo1File.writeBytes(bytes1)
+
+              val bytes2 = com.example.data.GoogleSheetsDriveService.readImageBytes(
+                context = context,
+                imageUriString = image2Uri ?: image1Uri,
+                serialCode = generatedCode,
+                photoIndex = 2,
+                gender = gender
+              )
+              photo2File.writeBytes(bytes2)
+
+              val localPhoto1Uri = android.net.Uri.fromFile(photo1File).toString()
+              val localPhoto2Uri = android.net.Uri.fromFile(photo2File).toString()
 
               val newDossier = CandidateDossier(
                 dossierCode = generatedCode,
-                candidateName = candidateName.ifBlank { "Candidate $generatedCode" },
+                candidateName = candidateName.ifBlank { "Candidate ${generatedCode.uppercase()}" },
                 gender = gender,
                 city = finalCity,
                 age = ageNumber,
@@ -542,11 +555,22 @@ fun RegistrationFormScreen(
                 casteSect = casteSect,
                 familyDetails = familyDetails.ifBlank { "Dignified, verified matrimonial dossier." },
                 contactNumber = contactPhone.ifBlank { "+91 98000 00000" },
-                frontPortraitUrl = image1Uri ?: defaultPortrait,
-                fullLengthUrl = image2Uri ?: defaultPortrait,
+                frontPortraitUrl = localPhoto1Uri,
+                fullLengthUrl = localPhoto2Uri,
                 isVerified = true
               )
 
+              // Sync to Google Sheets and Google Drive with photo renaming (kmb001_1.jpg, kmb001_2.jpg)
+              val syncResult = com.example.data.GoogleSheetsDriveService.syncRegistration(
+                context = context,
+                dossier = newDossier,
+                sequenceCount = nextSeq,
+                image1Uri = localPhoto1Uri,
+                image2Uri = localPhoto2Uri
+              )
+
+              lastSyncResult = syncResult
+              // Save dossier with persistent local photo URI so it renders immediately in Search
               onSaveDossier(newDossier)
               createdDossierCode = generatedCode
               isSubmitting = false
@@ -650,7 +674,7 @@ fun RegistrationFormScreen(
           modifier = Modifier.fillMaxWidth()
         ) {
           Text(
-            text = "Official Bureau Dossier ID:",
+            text = "Official Bureau Dossier ID (Google Sheets & Drive):",
             fontSize = 12.sp,
             color = TextSand
           )
@@ -658,17 +682,44 @@ fun RegistrationFormScreen(
             text = createdDossierCode,
             fontFamily = FontFamily.Serif,
             fontWeight = FontWeight.Bold,
-            fontSize = 22.sp,
+            fontSize = 24.sp,
             color = GoldLight,
             modifier = Modifier.padding(vertical = 4.dp)
           )
-          Text(
-            text = "The dossier has been verified and registered into Khan Marriage Bureau records. You can now view matches.",
-            fontSize = 12.sp,
-            color = TextIvory,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 6.dp)
-          )
+          val currentFolder = lastSyncResult?.genderFolder ?: if (isDulhan) "Dulhan (Bride)" else "Dulha (Groom)"
+          val currentTab = lastSyncResult?.sheetTabName ?: currentFolder
+          Surface(
+            color = Color(0xFF1B1F1B),
+            shape = RoundedCornerShape(10.dp),
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(top = 8.dp)
+              .border(0.5.dp, GoldLight.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
+          ) {
+            Column(modifier = Modifier.padding(10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+              Text(
+                text = "📁 Drive Folder: $currentFolder / $createdDossierCode",
+                fontSize = 11.5.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = GoldLight
+              )
+              Text(
+                text = "🖼️ Photos: ${createdDossierCode}_1.jpg & ${createdDossierCode}_2.jpg",
+                fontSize = 11.sp,
+                color = TextIvory
+              )
+              Text(
+                text = "📊 Google Sheet Tab: '$currentTab'",
+                fontSize = 11.sp,
+                color = TextIvory
+              )
+              Text(
+                text = "🔗 Column I (Photo URL): Folder share link saved",
+                fontSize = 11.sp,
+                color = GoldLight
+              )
+            }
+          }
         }
       },
       confirmButton = {

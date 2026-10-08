@@ -40,7 +40,10 @@ class KhanViewModel(application: Application) : AndroidViewModel(application) {
     )
 
     viewModelScope.launch {
-      repository.seedIfEmpty()
+      // 1. Delete old mock dummy data
+      repository.deleteDummyDossiers()
+      // 2. Populate fresh Dulha & Dulhan profiles with images
+      repository.seedInitialProfiles(application)
     }
   }
 
@@ -54,6 +57,24 @@ class KhanViewModel(application: Application) : AndroidViewModel(application) {
       is KhanScreen.SearchProfiles -> KhanScreen.Portal
       is KhanScreen.GenderSelection -> KhanScreen.GenderSelection(null)
       KhanScreen.Portal -> KhanScreen.GenderSelection(null)
+    }
+  }
+
+  fun deleteAllDossiers() {
+    viewModelScope.launch {
+      repository.deleteAllDossiers()
+    }
+  }
+
+  fun deleteDummyDossiers() {
+    viewModelScope.launch {
+      repository.deleteDummyDossiers()
+    }
+  }
+
+  fun populateSampleProfiles() {
+    viewModelScope.launch {
+      repository.seedInitialProfiles(getApplication())
     }
   }
 

@@ -31,6 +31,12 @@ interface DossierDao {
   @Delete
   suspend fun deleteDossier(dossier: CandidateDossier)
 
+  @Query("DELETE FROM candidate_dossiers")
+  suspend fun deleteAllDossiers()
+
+  @Query("DELETE FROM candidate_dossiers WHERE dossierCode LIKE 'KMB-%' OR candidateName IN ('Zainab Fatima', 'Hamza Farooq', 'Areeba Maryam', 'Shahmeer Ali Khan')")
+  suspend fun deleteDummyDossiers()
+
   @Query("SELECT COUNT(*) FROM candidate_dossiers")
   suspend fun getCount(): Int
 }

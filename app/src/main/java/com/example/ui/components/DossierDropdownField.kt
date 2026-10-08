@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
@@ -90,20 +91,20 @@ fun DossierDropdownField(
       )
     }
 
-    // Input Field Box
+    // Input Field Box (Black Background with White Text)
     Box(
       modifier = Modifier
         .fillMaxWidth()
         .height(48.dp)
         .testTag(testTag)
+        .clip(RoundedCornerShape(14.dp))
         .border(
           width = 1.dp,
-          color = GoldPrimary.copy(alpha = 0.35f),
+          color = GoldLight.copy(alpha = 0.5f),
           shape = RoundedCornerShape(14.dp)
         )
         .background(
-          color = SurfaceDark,
-          shape = RoundedCornerShape(14.dp)
+          color = androidx.compose.ui.graphics.Color(0xFF0F110F)
         )
         .clickable { showPicker = true }
         .padding(horizontal = 14.dp),
@@ -118,16 +119,16 @@ fun DossierDropdownField(
         Text(
           text = if (hasValue) selectedValue else placeholder,
           fontFamily = FontFamily.SansSerif,
-          fontWeight = if (hasValue) FontWeight.SemiBold else FontWeight.Normal,
-          fontSize = 13.sp,
-          color = if (hasValue) TextIvory else TextSand.copy(alpha = 0.7f),
+          fontWeight = FontWeight.Medium,
+          fontSize = 13.5.sp,
+          color = if (hasValue) androidx.compose.ui.graphics.Color(0xFFFFFFFF) else androidx.compose.ui.graphics.Color(0xFF9E9E9E),
           modifier = Modifier.weight(1f)
         )
 
         Icon(
           imageVector = Icons.Default.KeyboardArrowDown,
           contentDescription = "Expand dropdown",
-          tint = GoldPrimary,
+          tint = GoldLight,
           modifier = Modifier.size(20.dp)
         )
       }

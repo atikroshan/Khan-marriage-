@@ -174,12 +174,13 @@ fun PhotoUploadCard(
       .clip(RoundedCornerShape(16.dp))
       .border(
         width = 1.dp,
-        color = if (hasImage) GoldPrimary else EmeraldBorder.copy(alpha = 0.8f),
+        color = GoldLight,
         shape = RoundedCornerShape(16.dp)
       )
       .background(
-        color = Color(0xFF09140E),
-        shape = RoundedCornerShape(16.dp)
+        brush = androidx.compose.ui.graphics.Brush.horizontalGradient(
+          colors = listOf(com.example.ui.theme.GoldLight, com.example.ui.theme.GoldMedium, com.example.ui.theme.GoldDark)
+        )
       )
       .clickable { onClick() }
       .padding(8.dp),
@@ -206,7 +207,7 @@ fun PhotoUploadCard(
             .padding(2.dp)
             .size(24.dp)
             .clip(CircleShape)
-            .background(RoyalBlack.copy(alpha = 0.75f))
+            .background(RoyalBlack.copy(alpha = 0.85f))
             .clickable { onClear() },
           contentAlignment = Alignment.Center
         ) {
@@ -228,14 +229,14 @@ fun PhotoUploadCard(
           modifier = Modifier
             .size(36.dp)
             .clip(CircleShape)
-            .border(1.dp, GoldPrimary.copy(alpha = 0.4f), CircleShape)
-            .background(RoyalBlack.copy(alpha = 0.6f)),
+            .border(1.dp, Color(0xFF141512).copy(alpha = 0.4f), CircleShape)
+            .background(Color(0xFF141512).copy(alpha = 0.15f)),
           contentAlignment = Alignment.Center
         ) {
           Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = GoldLight,
+            tint = Color(0xFF141512),
             modifier = Modifier.size(18.dp)
           )
         }
@@ -244,18 +245,18 @@ fun PhotoUploadCard(
 
         Text(
           text = title,
-          fontFamily = FontFamily.Serif,
+          fontFamily = FontFamily.SansSerif,
           fontWeight = FontWeight.Bold,
           fontSize = 12.sp,
-          color = TextIvory
+          color = Color(0xFF141512)
         )
 
         Text(
           text = subtitle,
           fontFamily = FontFamily.SansSerif,
-          fontWeight = FontWeight.Normal,
+          fontWeight = FontWeight.SemiBold,
           fontSize = 10.sp,
-          color = TextSand.copy(alpha = 0.8f)
+          color = Color(0xFF3B2E10)
         )
       }
     }

@@ -39,34 +39,36 @@ fun KhanApp(
       .fillMaxSize()
       .background(RoyalBlack)
   ) {
-    // Elegant, very light Islamic Jodi (Nikah Wedding Couple) background watermark visible across all pages
-    AsyncImage(
-      model = ImageRequest.Builder(LocalContext.current)
-        .data(R.drawable.ic_islamic_jodi_bg)
-        .crossfade(true)
-        .build(),
-      contentDescription = "Islamic Wedding Couple Background",
-      contentScale = ContentScale.Crop,
-      modifier = Modifier
-        .fillMaxSize()
-        .alpha(0.15f)
-    )
+    // Cinematic falling rose petals rain and background image (only shown on Portal, Registration, and SearchProfiles)
+    val showDecor = currentScreen is KhanScreen.Portal || currentScreen is KhanScreen.SearchProfiles
+    
+    if (showDecor) {
+      AsyncImage(
+        model = ImageRequest.Builder(LocalContext.current)
+          .data(R.drawable.ic_islamic_jodi_bg)
+          .crossfade(true)
+          .build(),
+        contentDescription = "Islamic Wedding Couple Background",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+          .fillMaxSize()
+          .alpha(0.42f)
+      )
 
-    // Soft dark gradient overlay ensuring crisp contrast and royal ambiance
-    Box(
-      modifier = Modifier
-        .fillMaxSize()
-        .background(
-          brush = Brush.verticalGradient(
-            0f to RoyalBlack.copy(alpha = 0.45f),
-            0.5f to RoyalBlack.copy(alpha = 0.25f),
-            1f to RoyalBlack.copy(alpha = 0.55f)
+      // Soft balanced dark gradient overlay
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .background(
+            brush = Brush.verticalGradient(
+              0f to RoyalBlack.copy(alpha = 0.35f),
+              0.4f to RoyalBlack.copy(alpha = 0.15f),
+              0.7f to RoyalBlack.copy(alpha = 0.25f),
+              1f to RoyalBlack.copy(alpha = 0.50f)
+            )
           )
-        )
-    )
-
-    // Cinematic falling rose petals rain overlay
-    RosePetalsRainOverlay()
+      )
+    }
 
     AnimatedContent(
       targetState = currentScreen,
@@ -77,17 +79,20 @@ fun KhanApp(
     ) { screen ->
       when (screen) {
         is KhanScreen.Portal -> {
-          PortalHomeScreen(
-            onNavigateToNewRegistration = {
-              viewModel.navigateTo(KhanScreen.Registration(viewModel.selectedGenderForRegistration))
-            },
-            onNavigateToSearchProfiles = {
-              viewModel.navigateTo(KhanScreen.SearchProfiles())
-            },
-            onBack = {
-              viewModel.navigateBack()
-            }
-          )
+          Box(modifier = Modifier.fillMaxSize()) {
+            RosePetalsRainOverlay()
+            PortalHomeScreen(
+              onNavigateToNewRegistration = {
+                viewModel.navigateTo(KhanScreen.Registration(viewModel.selectedGenderForRegistration))
+              },
+              onNavigateToSearchProfiles = {
+                viewModel.navigateTo(KhanScreen.SearchProfiles(initialGender = viewModel.selectedGenderForRegistration))
+              },
+              onBack = {
+                viewModel.navigateBack()
+              }
+            )
+          }
         }
 
         is KhanScreen.GenderSelection -> {
@@ -102,34 +107,46 @@ fun KhanApp(
         }
 
         is KhanScreen.Registration -> {
-          RegistrationFormScreen(
-            gender = screen.gender,
-            onSubmitSuccess = {
-              viewModel.navigateTo(KhanScreen.SearchProfiles())
-            },
-            onNavigateToSearch = {
-              viewModel.navigateTo(KhanScreen.SearchProfiles())
-            },
-            onBack = {
-              viewModel.navigateBack()
-            },
-            onSaveDossier = { newDossier ->
-              viewModel.saveDossier(newDossier)
-            }
-          )
+          Box(modifier = Modifier.fillMaxSize()) {
+            RosePetalsRainOverlay()
+            RegistrationFormScreen(
+              gender = screen.gender,
+              onSubmitSuccess = {
+                viewModel.navigateTo(KhanScreen.SearchProfiles())
+              },
+              onNavigateToSearch = {
+                viewModel.navigateTo(KhanScreen.SearchProfiles())
+              },
+              onBack = {
+                viewModel.navigateBack()
+              },
+              onSaveDossier = { newDossier ->
+                viewModel.saveDossier(newDossier)
+              }
+            )
+          }
         }
 
         is KhanScreen.SearchProfiles -> {
-          SearchProfilesScreen(
-            dossiers = dossiers,
-            initialGender = screen.initialGender,
-            onNavigateToNewRegistration = {
-              viewModel.navigateTo(KhanScreen.GenderSelection())
-            },
-            onBack = {
-              viewModel.navigateBack()
-            }
-          )
+          Box(modifier = Modifier.fillMaxSize()) {
+            RosePetalsRainOverlay()
+            SearchProfilesScreen(
+              dossiers = dossiers,
+              initialGender = screen.initialGender,
+              onNavigateToNewRegistration = {
+                viewModel.navigateTo(KhanScreen.GenderSelection())
+              },
+              onBack = {
+                viewModel.navigateBack()
+              },
+              onDeleteAllDossiers = {
+                viewModel.deleteAllDossiers()
+              },
+              onPopulateSampleProfiles = {
+                viewModel.populateSampleProfiles()
+              }
+            )
+          }
         }
       }
     }

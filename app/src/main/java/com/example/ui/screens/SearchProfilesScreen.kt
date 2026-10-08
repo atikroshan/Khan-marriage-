@@ -34,11 +34,16 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -49,11 +54,14 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,7 +80,6 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.data.AppDatabase
 import com.example.data.CandidateDossier
-import com.example.ui.components.AnimatedSearchProfileCard
 import com.example.ui.components.JewelDivider
 import com.example.ui.theme.EmeraldBorder
 import com.example.ui.theme.EmeraldContainer
@@ -96,41 +103,29 @@ fun SearchProfilesScreen(
   initialGender: String = "All",
   onNavigateToNewRegistration: () -> Unit,
   onBack: () -> Unit,
+  onDeleteAllDossiers: () -> Unit = {},
+  onPopulateSampleProfiles: () -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   BackHandler { onBack() }
+  val context = LocalContext.current
 
   var selectedGenderTab by remember(initialGender) { mutableStateOf(initialGender) }
   var searchQuery by remember { mutableStateOf("") }
   var selectedCityFilter by remember { mutableStateOf<String?>(null) }
   var selectedDossierForDetail by remember { mutableStateOf<CandidateDossier?>(null) }
-
-  // Subtle pulsing animation for search lens and active search indicators
-  val infiniteTransition = rememberInfiniteTransition(label = "searchPulse")
-  val searchIconScale by infiniteTransition.animateFloat(
-    initialValue = 1f,
-    targetValue = 1.15f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(1200, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "searchScale"
-  )
-  val searchGlowAlpha by infiniteTransition.animateFloat(
-    initialValue = 0.4f,
-    targetValue = 0.95f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(1200, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "searchGlow"
-  )
+  var showDeleteDialog by remember { mutableStateOf(false) }
+  var showSheetSettingsDialog by remember { mutableStateOf(false) }
 
   val filteredList = dossiers.filter { dossier ->
-    val matchesGender = when (selectedGenderTab) {
-      "Dulhan" -> dossier.gender.equals("Dulhan", ignoreCase = true)
-      "Dulha" -> dossier.gender.equals("Dulha", ignoreCase = true)
-      else -> true
+    val matchesGender = if (initialGender != "All") {
+        dossier.gender.equals(initialGender, ignoreCase = true)
+    } else {
+        when (selectedGenderTab) {
+          "Dulhan" -> dossier.gender.equals("Dulhan", ignoreCase = true)
+          "Dulha" -> dossier.gender.equals("Dulha", ignoreCase = true)
+          else -> true
+        }
     }
 
     val matchesCity = if (selectedCityFilter == null) true else dossier.city.contains(selectedCityFilter!!, ignoreCase = true)
@@ -219,7 +214,7 @@ fun SearchProfilesScreen(
             color = GoldLight
           )
           Text(
-            text = "VERIFIED MATCHES",
+            text = if (initialGender != "All") "${initialGender.uppercase()} MATCHES" else "VERIFIED MATCHES",
             fontFamily = FontFamily.SansSerif,
             fontWeight = FontWeight.SemiBold,
             fontSize = 9.sp,
@@ -228,16 +223,32 @@ fun SearchProfilesScreen(
           )
         }
 
-        Spacer(modifier = Modifier.width(60.dp))
-      }
+        // Gender Avatar (Moved to Right Side)
+        if (initialGender != "All") {
+          Spacer(modifier = Modifier.width(8.dp))
+          Box(
+            modifier = Modifier
+              .size(38.dp)
+              .clip(CircleShape)
+              .border(1.dp, GoldPrimary, CircleShape)
+              .background(SurfaceDark)
+          ) {
+            AsyncImage(
+              model = ImageRequest.Builder(LocalContext.current)
+                .data(if (initialGender.equals("Dulhan", true)) AppDatabase.DULHAN_IMAGE_URL else AppDatabase.DULHA_IMAGE_URL)
+                .crossfade(true)
+                .build(),
+              contentDescription = "Gender Avatar",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.fillMaxSize()
+            )
+          }
+        }
 
-      // Animated "Search Profile" Card with lens moving from Right to Left (pauses 5s on right, reveals text)
-      AnimatedSearchProfileCard(
-        modifier = Modifier
-          .align(Alignment.CenterHorizontally)
-          .padding(top = 4.dp, bottom = 10.dp),
-        onClick = onNavigateToNewRegistration
-      )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+          // Placeholder to maintain spacing if needed
+        }
+      }
 
       // Search Bar with Small Animation Effect
       OutlinedTextField(
@@ -250,16 +261,14 @@ fun SearchProfilesScreen(
               .padding(start = 6.dp)
               .size(32.dp)
               .clip(CircleShape)
-              .background(GoldPrimary.copy(alpha = if (searchQuery.isNotBlank()) searchGlowAlpha * 0.25f else 0.1f)),
+              .background(GoldPrimary.copy(alpha = if (searchQuery.isNotBlank()) 0.25f else 0.1f)),
             contentAlignment = Alignment.Center
           ) {
             Icon(
               imageVector = Icons.Default.Search,
               contentDescription = "Search icon",
               tint = if (searchQuery.isNotBlank()) GoldLight else GoldPrimary,
-              modifier = Modifier
-                .size(18.dp)
-                .graphicsLayer(scaleX = searchIconScale, scaleY = searchIconScale)
+              modifier = Modifier.size(18.dp)
             )
           }
         },
@@ -298,11 +307,11 @@ fun SearchProfilesScreen(
             modifier = Modifier
               .size(7.dp)
               .clip(CircleShape)
-              .background(GoldPrimary.copy(alpha = searchGlowAlpha))
+              .background(GoldPrimary.copy(alpha = 0.8f))
           )
           Spacer(modifier = Modifier.width(6.dp))
           Text(
-            text = if (searchQuery.isNotBlank()) "Searching \"$searchQuery\"" else "Exploring ${if (selectedGenderTab == "All") "All" else selectedGenderTab} Matches",
+            text = if (searchQuery.isNotBlank()) "Searching \"$searchQuery\"" else "Exploring ${if (initialGender != "All") initialGender else if (selectedGenderTab == "All") "All" else selectedGenderTab} Matches",
             fontSize = 11.sp,
             color = GoldMuted,
             fontWeight = FontWeight.Medium
@@ -323,30 +332,32 @@ fun SearchProfilesScreen(
       }
 
       // Gender Category Tabs: "All", "Dulhan (Brides)", "Dulha (Grooms)"
-      Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 16.dp, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        GenderFilterPill(
-          title = "All Profiles (${dossiers.size})",
-          isSelected = selectedGenderTab == "All",
-          onClick = { selectedGenderTab = "All" },
-          modifier = Modifier.weight(1f)
-        )
-        GenderFilterPill(
-          title = "Dulhan (Brides)",
-          isSelected = selectedGenderTab == "Dulhan",
-          onClick = { selectedGenderTab = "Dulhan" },
-          modifier = Modifier.weight(1f)
-        )
-        GenderFilterPill(
-          title = "Dulha (Grooms)",
-          isSelected = selectedGenderTab == "Dulha",
-          onClick = { selectedGenderTab = "Dulha" },
-          modifier = Modifier.weight(1f)
-        )
+      if (initialGender == "All") {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          GenderFilterPill(
+            title = "All Profiles (${dossiers.size})",
+            isSelected = selectedGenderTab == "All",
+            onClick = { selectedGenderTab = "All" },
+            modifier = Modifier.weight(1f)
+          )
+          GenderFilterPill(
+            title = "Dulhan (Brides)",
+            isSelected = selectedGenderTab == "Dulhan",
+            onClick = { selectedGenderTab = "Dulhan" },
+            modifier = Modifier.weight(1f)
+          )
+          GenderFilterPill(
+            title = "Dulha (Grooms)",
+            isSelected = selectedGenderTab == "Dulha",
+            onClick = { selectedGenderTab = "Dulha" },
+            modifier = Modifier.weight(1f)
+          )
+        }
       }
 
       // Quick City Chips
@@ -401,6 +412,19 @@ fun SearchProfilesScreen(
             fontSize = 12.sp,
             color = TextMuted
           )
+          if (dossiers.isEmpty()) {
+            Spacer(modifier = Modifier.height(14.dp))
+            Button(
+              onClick = onPopulateSampleProfiles,
+              colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary, contentColor = TextDark),
+              shape = RoundedCornerShape(20.dp),
+              modifier = Modifier.testTag("button_populate_samples")
+            ) {
+              Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
+              Spacer(modifier = Modifier.width(6.dp))
+              Text("Fill Sample Dulha & Dulhan Profiles (With Images)", fontWeight = FontWeight.Bold, fontSize = 11.5.sp)
+            }
+          }
         }
       } else {
         LazyColumn(
@@ -420,32 +444,162 @@ fun SearchProfilesScreen(
       }
     }
 
-    // Floating Action Button to Register New Candidate
-    FloatingActionButton(
-      onClick = onNavigateToNewRegistration,
-      containerColor = GoldPrimary,
-      contentColor = TextDark,
-      shape = CircleShape,
-      modifier = Modifier
-        .align(Alignment.BottomEnd)
-        .padding(20.dp)
-        .testTag("fab_register_candidate")
-    ) {
-      Row(
-        modifier = Modifier.padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Icon(Icons.Default.Add, contentDescription = "Add")
-        Spacer(modifier = Modifier.width(4.dp))
-        Text("New Dossier", fontWeight = FontWeight.Bold, fontSize = 12.sp)
-      }
-    }
-
     // Full Dossier Detail Sheet
     DossierDetailSheet(
       dossier = selectedDossierForDetail,
       onDismiss = { selectedDossierForDetail = null }
     )
+
+    // Confirmation Dialog for Clearing All Profiles
+    if (showDeleteDialog) {
+      AlertDialog(
+        onDismissRequest = { showDeleteDialog = false },
+        containerColor = Color(0xFF1A1414),
+        titleContentColor = Color(0xFFFF8A8A),
+        textContentColor = TextIvory,
+        title = { Text("Delete All Profiles?", fontWeight = FontWeight.Bold) },
+        text = {
+          Text(
+            "Are you sure you want to clear all profiles from the app? You can add fresh registrations for Dulha and Dulhan with photos.",
+            fontSize = 13.sp
+          )
+        },
+        confirmButton = {
+          Button(
+            onClick = {
+              showDeleteDialog = false
+              onDeleteAllDossiers()
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFB52B2B))
+          ) {
+            Text("Yes, Delete All", color = Color.White, fontWeight = FontWeight.Bold)
+          }
+        },
+        dismissButton = {
+          TextButton(onClick = { showDeleteDialog = false }) {
+            Text("Cancel", color = GoldLight)
+          }
+        }
+      )
+    }
+
+    // Google Sheets Connection & Test Entry Dialog
+    if (showSheetSettingsDialog) {
+      val scope = rememberCoroutineScope()
+      var tempSheetUrl by remember {
+        mutableStateOf(
+          com.example.data.GoogleSheetsDriveService.customSpreadsheetUrl.ifBlank {
+            "https://docs.google.com/spreadsheets/d/${com.example.data.GoogleSheetsDriveService.SPREADSHEET_ID}/edit?usp=sharing"
+          }
+        )
+      }
+      var tempWebhookUrl by remember {
+        mutableStateOf(com.example.data.GoogleSheetsDriveService.appsScriptWebhookUrl)
+      }
+      var testStatusMessage by remember { mutableStateOf<String?>(null) }
+      var isTesting by remember { mutableStateOf(false) }
+
+      AlertDialog(
+        onDismissRequest = { showSheetSettingsDialog = false },
+        containerColor = Color(0xFF141714),
+        titleContentColor = GoldLight,
+        textContentColor = TextIvory,
+        title = {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Settings, contentDescription = null, tint = GoldLight, modifier = Modifier.size(20.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Google Sheet Connection", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+          }
+        },
+        text = {
+          Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+              text = "Paste your exact complete Google Sheet URL below. (Tabs required: 'Dulha (Groom)' and 'Dulhan (Bride)').",
+              fontSize = 11.5.sp,
+              color = TextSand
+            )
+
+            OutlinedTextField(
+              value = tempSheetUrl,
+              onValueChange = {
+                tempSheetUrl = it
+                com.example.data.GoogleSheetsDriveService.customSpreadsheetUrl = it
+              },
+              label = { Text("Google Sheet URL", color = GoldLight, fontSize = 11.sp) },
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GoldLight,
+                unfocusedBorderColor = GoldLight.copy(alpha = 0.5f),
+                focusedTextColor = TextIvory,
+                unfocusedTextColor = TextIvory
+              ),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier.fillMaxWidth().testTag("input_sheet_url")
+            )
+
+            OutlinedTextField(
+              value = tempWebhookUrl,
+              onValueChange = {
+                tempWebhookUrl = it
+                com.example.data.GoogleSheetsDriveService.appsScriptWebhookUrl = it
+              },
+              label = { Text("Optional Apps Script Webhook URL", color = GoldLight, fontSize = 11.sp) },
+              colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GoldLight,
+                unfocusedBorderColor = GoldLight.copy(alpha = 0.5f),
+                focusedTextColor = TextIvory,
+                unfocusedTextColor = TextIvory
+              ),
+              shape = RoundedCornerShape(10.dp),
+              modifier = Modifier.fillMaxWidth().testTag("input_webhook_url")
+            )
+
+            Button(
+              onClick = {
+                isTesting = true
+                testStatusMessage = "Sending test entries to sheet..."
+                scope.launch {
+                  val result = com.example.data.GoogleSheetsDriveService.sendDirectTestEntriesToSheet(context)
+                  isTesting = false
+                  testStatusMessage = if (result.first) "✅ " + result.second else "⚠️ " + result.second
+                }
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary, contentColor = TextDark),
+              shape = RoundedCornerShape(10.dp),
+              enabled = !isTesting,
+              modifier = Modifier.fillMaxWidth().testTag("button_test_sheet_connection")
+            ) {
+              Text(if (isTesting) "Sending..." else "🚀 Send Test Entry to Sheet", fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            }
+
+            testStatusMessage?.let { msg ->
+              Text(
+                text = msg,
+                fontSize = 11.sp,
+                color = if (msg.startsWith("✅")) GoldLight else Color(0xFFFFB2B2),
+                modifier = Modifier.padding(top = 4.dp)
+              )
+            }
+          }
+        },
+        confirmButton = {
+          Button(
+            onClick = {
+              com.example.data.GoogleSheetsDriveService.customSpreadsheetUrl = tempSheetUrl
+              com.example.data.GoogleSheetsDriveService.appsScriptWebhookUrl = tempWebhookUrl
+              showSheetSettingsDialog = false
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = GoldPrimary, contentColor = TextDark)
+          ) {
+            Text("Save Link", fontWeight = FontWeight.Bold)
+          }
+        },
+        dismissButton = {
+          TextButton(onClick = { showSheetSettingsDialog = false }) {
+            Text("Close", color = GoldLight)
+          }
+        }
+      )
+    }
   }
 }
 

@@ -76,40 +76,6 @@ fun GenderSelectionScreen(
     BackHandler { onBack() }
   }
 
-  // Slow smooth bounce animation strictly floating UPWARDS (0f to -7f)
-  // so the portraits never touch anything below or above
-  val infiniteTransition = rememberInfiniteTransition(label = "avatarBounce")
-  val bounceOffsetDulha by infiniteTransition.animateFloat(
-    initialValue = 0f,
-    targetValue = -7f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(1600, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "dulhaBounce"
-  )
-
-  val bounceOffsetDulhan by infiniteTransition.animateFloat(
-    initialValue = -7f,
-    targetValue = 0f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(1600, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "dulhanBounce"
-  )
-
-  // Pulsing trim glow animation for both cards
-  val glowAlpha by infiniteTransition.animateFloat(
-    initialValue = 0.35f,
-    targetValue = 1.0f,
-    animationSpec = infiniteRepeatable(
-      animation = tween(1500, easing = FastOutSlowInEasing),
-      repeatMode = RepeatMode.Reverse
-    ),
-    label = "cardTrimGlow"
-  )
-
   Column(
     modifier = modifier
       .fillMaxSize()
@@ -148,8 +114,8 @@ fun GenderSelectionScreen(
             .height(138.dp)
             .clip(RoundedCornerShape(22.dp))
             .border(
-              width = 1.5.dp,
-              color = GoldLight.copy(alpha = glowAlpha),
+              width = 1.dp,
+              color = GoldLight.copy(alpha = 0.6f),
               shape = RoundedCornerShape(22.dp)
             )
             .background(
@@ -207,15 +173,15 @@ fun GenderSelectionScreen(
           }
         }
 
-        // Floating Overlapping Portrait Avatar strictly bouncing upwards with trim glow
+        // Floating Overlapping Portrait Avatar
         Box(
           modifier = Modifier
             .align(Alignment.TopCenter)
-            .offset(y = (0.dp + bounceOffsetDulha.dp))
+            .offset(y = 0.dp)
             .size(62.dp)
             .clip(CircleShape)
             .border(2.5.dp, GoldLight, CircleShape)
-            .border(4.5.dp, GoldPrimary.copy(alpha = glowAlpha * 0.6f), CircleShape)
+            .border(4.5.dp, GoldPrimary.copy(alpha = 0.35f), CircleShape)
             .background(Color(0xFF1A1C19))
         ) {
           AsyncImage(
@@ -252,8 +218,8 @@ fun GenderSelectionScreen(
             .height(138.dp)
             .clip(RoundedCornerShape(22.dp))
             .border(
-              width = 1.5.dp,
-              color = RoseGoldBorder.copy(alpha = glowAlpha),
+              width = 1.dp,
+              color = RoseGoldBorder.copy(alpha = 0.7f),
               shape = RoundedCornerShape(22.dp)
             )
             .background(
@@ -311,15 +277,15 @@ fun GenderSelectionScreen(
           }
         }
 
-        // Floating Overlapping Portrait Avatar strictly bouncing upwards with Rose Gold trim glow
+        // Floating Overlapping Portrait Avatar
         Box(
           modifier = Modifier
             .align(Alignment.TopCenter)
-            .offset(y = (0.dp + bounceOffsetDulhan.dp))
+            .offset(y = 0.dp)
             .size(62.dp)
             .clip(CircleShape)
             .border(2.5.dp, RoseGoldLight, CircleShape)
-            .border(4.5.dp, RoseGoldBorder.copy(alpha = glowAlpha * 0.6f), CircleShape)
+            .border(4.5.dp, RoseGoldBorder.copy(alpha = 0.4f), CircleShape)
             .background(Color(0xFF1A1C19))
         ) {
           AsyncImage(

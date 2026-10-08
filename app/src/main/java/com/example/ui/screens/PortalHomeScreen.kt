@@ -97,7 +97,7 @@ fun PortalHomeScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // 1. New Registration Card (Gold Gradient)
+      // 1. New Registration Card (Matching Submit Button Horizontal Gold Gradient & Black Text)
       Box(
         modifier = Modifier
           .width(200.dp)
@@ -110,7 +110,7 @@ fun PortalHomeScreen(
             shape = RoundedCornerShape(22.dp)
           )
           .background(
-            brush = Brush.verticalGradient(
+            brush = Brush.horizontalGradient(
               colors = listOf(GoldLight, GoldMedium, GoldDark)
             )
           )
@@ -128,19 +128,19 @@ fun PortalHomeScreen(
             modifier = Modifier
               .size(44.dp)
               .clip(CircleShape)
-              .background(Color(0xFF050505).copy(alpha = 0.9f))
-              .border(1.dp, GoldPrimary.copy(alpha = 0.25f), CircleShape),
+              .background(Color(0xFF141512))
+              .border(1.dp, Color(0xFF141512).copy(alpha = 0.5f), CircleShape),
             contentAlignment = Alignment.Center
           ) {
             Icon(
               imageVector = Icons.Default.PersonAdd,
               contentDescription = "New Registration",
-              tint = GoldPrimary,
+              tint = GoldLight,
               modifier = Modifier.size(24.dp)
             )
           }
 
-          // Text Content
+          // Text Content (Same text color as submit button: Color(0xFF141512))
           Column(
             horizontalAlignment = Alignment.CenterHorizontally
           ) {
@@ -149,16 +149,16 @@ fun PortalHomeScreen(
               fontFamily = FontFamily.SansSerif,
               fontWeight = FontWeight.Bold,
               fontSize = 15.sp,
-              color = Color.Black,
-              letterSpacing = 0.3.sp
+              color = Color(0xFF141512),
+              letterSpacing = 0.5.sp
             )
             Spacer(modifier = Modifier.height(3.dp))
             Text(
               text = "Establish Candidate Dossier",
               fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.SemiBold,
+              fontWeight = FontWeight.Bold,
               fontSize = 10.sp,
-              color = Color(0xFF261900)
+              color = Color(0xFF141512).copy(alpha = 0.85f)
             )
           }
 
@@ -167,13 +167,13 @@ fun PortalHomeScreen(
             modifier = Modifier
               .size(28.dp)
               .clip(CircleShape)
-              .background(Color(0xFF050505).copy(alpha = 0.8f)),
+              .background(Color(0xFF141512)),
             contentAlignment = Alignment.Center
           ) {
             Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowForward,
               contentDescription = "Proceed to registration",
-              tint = TextIvory,
+              tint = GoldLight,
               modifier = Modifier.size(14.dp)
             )
           }
