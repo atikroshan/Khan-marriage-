@@ -14,7 +14,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -71,15 +74,17 @@ fun KhanHeader(
   onAvatarClick: (() -> Unit)? = null,
   onBack: (() -> Unit)? = null
 ) {
+  val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+
   Column(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Macro wedding hands banner with crystal clear view of full hands and professional bottom feather
+    // Macro wedding hands banner with edge-to-edge bleed to very top edge of screen
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(136.dp)
+        .height(148.dp + statusBarTop)
     ) {
       AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -120,12 +125,13 @@ fun KhanHeader(
           )
       )
 
-      // Prominent Back Button at top left
+      // Prominent Back Button at top left (with status bar top padding for edge-to-edge safe area)
       if (onBack != null) {
         Box(
           modifier = Modifier
             .align(Alignment.TopStart)
-            .padding(top = 10.dp, start = 12.dp)
+            .statusBarsPadding()
+            .padding(top = 8.dp, start = 12.dp)
             .size(42.dp)
             .clip(CircleShape)
             .background(RoyalBlack.copy(alpha = 0.88f))
@@ -143,12 +149,13 @@ fun KhanHeader(
         }
       }
 
-      // Optional avatar icon at top right (like in Image 1)
+      // Optional avatar icon at top right (like in Image 1, with status bar top padding)
       if (avatarUrl != null) {
         Box(
           modifier = Modifier
             .align(Alignment.TopEnd)
-            .padding(top = 10.dp, end = 16.dp)
+            .statusBarsPadding()
+            .padding(top = 8.dp, end = 16.dp)
             .size(52.dp)
             .clip(CircleShape)
             .border(2.dp, GoldPrimary, CircleShape)

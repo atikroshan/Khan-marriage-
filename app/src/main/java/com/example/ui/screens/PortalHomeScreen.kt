@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -76,16 +77,14 @@ fun PortalHomeScreen(
   )
 
   Column(
-    modifier = modifier
-      .fillMaxSize()
-      .padding(horizontal = 16.dp),
+    modifier = modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.SpaceBetween
   ) {
-    // Top Section: Header with Back button
+    // Top Section: Header with Back button (Edge-to-edge full width)
     KhanHeader(
       onBack = onBack,
-      modifier = Modifier.padding(top = 4.dp)
+      modifier = Modifier.fillMaxWidth()
     )
 
     // Middle Section: Two Hero Action Cards (New Registration on top, Search Profiles below)
@@ -93,7 +92,7 @@ fun PortalHomeScreen(
       modifier = Modifier
         .fillMaxWidth()
         .weight(1f)
-        .padding(vertical = 12.dp),
+        .padding(horizontal = 16.dp, vertical = 12.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
@@ -275,7 +274,8 @@ fun PortalHomeScreen(
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 14.dp),
+        .navigationBarsPadding()
+        .padding(bottom = 12.dp),
       horizontalArrangement = Arrangement.Center,
       verticalAlignment = Alignment.CenterVertically
     ) {

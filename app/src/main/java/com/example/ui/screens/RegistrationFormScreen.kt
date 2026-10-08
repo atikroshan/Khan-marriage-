@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -250,17 +251,16 @@ fun RegistrationFormScreen(
   val formSubtitle = "CANDIDATE DOSSIER FORM (${gender.uppercase()})"
 
   Column(
-    modifier = modifier
-      .fillMaxSize()
-      .background(GoldPrimary)
+    modifier = modifier.fillMaxSize()
   ) {
-    // Top Header with Back button and Bureau branding
+    // Top Header with Back button and Bureau branding (Edge-to-edge)
     KhanHeader(
       badgeTitle = "NEW REGISTRATION",
       badgeSubtitle = formSubtitle,
       avatarUrl = avatarUrl,
       onAvatarClick = { onBack() },
-      onBack = onBack
+      onBack = onBack,
+      modifier = Modifier.fillMaxWidth()
     )
 
     // Scrollable Form Body
@@ -268,6 +268,7 @@ fun RegistrationFormScreen(
       modifier = Modifier
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
+        .navigationBarsPadding()
         .padding(horizontal = 20.dp, vertical = 12.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {

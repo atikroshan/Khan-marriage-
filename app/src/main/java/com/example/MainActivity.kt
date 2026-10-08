@@ -27,9 +27,7 @@ class MainActivity : ComponentActivity() {
           containerColor = RoyalBlack
         ) { innerPadding ->
           Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .safeDrawingPadding()
+            modifier = Modifier.fillMaxSize()
           ) {
             KhanApp()
           }

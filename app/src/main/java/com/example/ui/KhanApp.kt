@@ -39,8 +39,11 @@ fun KhanApp(
       .fillMaxSize()
       .background(RoyalBlack)
   ) {
-    // Cinematic falling rose petals rain and background image (only shown on Portal, Registration, and SearchProfiles)
-    val showDecor = currentScreen is KhanScreen.Portal || currentScreen is KhanScreen.SearchProfiles
+    // Cinematic falling rose petals rain and background image (shown on Home/GenderSelection, Portal, Registration, and SearchProfiles)
+    val showDecor = currentScreen is KhanScreen.GenderSelection ||
+        currentScreen is KhanScreen.Portal ||
+        currentScreen is KhanScreen.Registration ||
+        currentScreen is KhanScreen.SearchProfiles
     
     if (showDecor) {
       AsyncImage(
@@ -96,14 +99,17 @@ fun KhanApp(
         }
 
         is KhanScreen.GenderSelection -> {
-          GenderSelectionScreen(
-            modeTitle = screen.modeTitle,
-            onSelectGender = { selectedGender ->
-              viewModel.selectedGenderForRegistration = selectedGender
-              viewModel.navigateTo(KhanScreen.Portal)
-            },
-            onBack = null
-          )
+          Box(modifier = Modifier.fillMaxSize()) {
+            RosePetalsRainOverlay()
+            GenderSelectionScreen(
+              modeTitle = screen.modeTitle,
+              onSelectGender = { selectedGender ->
+                viewModel.selectedGenderForRegistration = selectedGender
+                viewModel.navigateTo(KhanScreen.Portal)
+              },
+              onBack = null
+            )
+          }
         }
 
         is KhanScreen.Registration -> {

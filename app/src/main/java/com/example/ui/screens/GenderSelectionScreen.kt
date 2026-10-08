@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,24 +78,23 @@ fun GenderSelectionScreen(
   }
 
   Column(
-    modifier = modifier
-      .fillMaxSize()
-      .padding(horizontal = 16.dp),
+    modifier = modifier.fillMaxSize(),
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.SpaceBetween
   ) {
-    // Top Header with Back Button and bold all caps mode title below punchline
+    // Top Header with Back Button and bold all caps mode title below punchline (Edge-to-edge full width)
     KhanHeader(
       badgeTitle = modeTitle,
       onBack = onBack,
-      modifier = Modifier.padding(top = 2.dp)
+      modifier = Modifier.fillMaxWidth()
     )
 
     // Middle: DULHA & DULHAN Cards centered perfectly between header and footer
     Column(
       modifier = Modifier
         .fillMaxWidth()
-        .weight(1f),
+        .weight(1f)
+        .padding(horizontal = 16.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
@@ -305,7 +305,8 @@ fun GenderSelectionScreen(
     Row(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(bottom = 14.dp),
+        .navigationBarsPadding()
+        .padding(bottom = 12.dp),
       horizontalArrangement = Arrangement.Center,
       verticalAlignment = Alignment.CenterVertically
     ) {
