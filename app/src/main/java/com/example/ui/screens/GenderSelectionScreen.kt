@@ -119,17 +119,16 @@ fun GenderSelectionScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // 1. DULHA (GROOM) CARD (Yellow Gold Gradient with slow smooth bounce animation)
+      // 1. DULHA (GROOM) CARD (Stable card body, only circular avatar bounces gently)
       Box(
         modifier = Modifier
-          .offset(y = bounceOffsetDulha.dp)
           .width(185.dp)
           .height(168.dp)
           .testTag("select_dulha_card")
           .clickable { onSelectGender("Dulha") },
         contentAlignment = Alignment.BottomCenter
       ) {
-        // Background Card
+        // Background Card (Stationary)
         Box(
           modifier = Modifier
             .fillMaxWidth()
@@ -195,11 +194,11 @@ fun GenderSelectionScreen(
           }
         }
 
-        // Floating Overlapping Portrait Avatar
+        // Floating Overlapping Portrait Avatar with slow gentle bouncing animation
         Box(
           modifier = Modifier
             .align(Alignment.TopCenter)
-            .offset(y = 0.dp)
+            .offset(y = bounceOffsetDulha.dp)
             .size(62.dp)
             .clip(CircleShape)
             .border(2.5.dp, GoldLight, CircleShape)
@@ -224,17 +223,16 @@ fun GenderSelectionScreen(
         width = 195.dp
       )
 
-      // 2. DULHAN (BRIDE) CARD (Rose Gold Gradient with alternating slow smooth bounce animation)
+      // 2. DULHAN (BRIDE) CARD (Stable card body, only circular avatar bounces gently)
       Box(
         modifier = Modifier
-          .offset(y = bounceOffsetDulhan.dp)
           .width(185.dp)
           .height(168.dp)
           .testTag("select_dulhan_card")
           .clickable { onSelectGender("Dulhan") },
         contentAlignment = Alignment.BottomCenter
       ) {
-        // Background Card in Rose Golden Gradient
+        // Background Card in Rose Golden Gradient (Stationary)
         Box(
           modifier = Modifier
             .fillMaxWidth()
@@ -300,11 +298,11 @@ fun GenderSelectionScreen(
           }
         }
 
-        // Floating Overlapping Portrait Avatar
+        // Floating Overlapping Portrait Avatar with slow gentle bouncing animation
         Box(
           modifier = Modifier
             .align(Alignment.TopCenter)
-            .offset(y = 0.dp)
+            .offset(y = bounceOffsetDulhan.dp)
             .size(62.dp)
             .clip(CircleShape)
             .border(2.5.dp, RoseGoldLight, CircleShape)

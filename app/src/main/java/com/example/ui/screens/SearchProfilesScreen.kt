@@ -168,37 +168,23 @@ fun SearchProfilesScreen(
           .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Prominent Luxury Back Button
+        // Regular Circular Back Button with Arrow
         Box(
           modifier = Modifier
-            .height(38.dp)
-            .clip(RoundedCornerShape(50))
+            .size(38.dp)
+            .clip(CircleShape)
             .background(Color(0xFF141714))
-            .border(1.dp, GoldPrimary, RoundedCornerShape(50))
+            .border(1.dp, GoldPrimary, CircleShape)
             .clickable { onBack() }
-            .padding(horizontal = 12.dp)
             .testTag("search_back_button"),
           contentAlignment = Alignment.Center
         ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-          ) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Back",
-              tint = GoldLight,
-              modifier = Modifier.size(16.dp)
-            )
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-              text = "Back",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Bold,
-              fontSize = 12.sp,
-              color = GoldLight
-            )
-          }
+          Icon(
+            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = "Back",
+            tint = GoldLight,
+            modifier = Modifier.size(20.dp)
+          )
         }
 
         Spacer(modifier = Modifier.width(8.dp))

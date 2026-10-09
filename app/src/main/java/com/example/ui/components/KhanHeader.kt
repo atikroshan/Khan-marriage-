@@ -80,11 +80,11 @@ fun KhanHeader(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Macro wedding hands banner with edge-to-edge bleed to very top edge of screen
+    // Macro wedding hands banner with edge-to-edge bleed, padded from top status bar so hands are shifted lower and clear without being cut
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(148.dp + statusBarTop)
+        .height(160.dp + statusBarTop)
     ) {
       AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -93,8 +93,10 @@ fun KhanHeader(
           .build(),
         contentDescription = "Royal bride and groom hands holding with mehndi and ring",
         contentScale = ContentScale.Crop,
-        alignment = Alignment.Center,
-        modifier = Modifier.fillMaxSize(),
+        alignment = Alignment.BottomCenter,
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(top = (statusBarTop * 0.7f).coerceAtLeast(14.dp)),
       )
 
       // Professional smooth bottom feather gradient
