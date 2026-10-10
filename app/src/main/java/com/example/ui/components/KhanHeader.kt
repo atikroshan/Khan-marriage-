@@ -34,9 +34,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,6 +54,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.R
@@ -80,11 +85,11 @@ fun KhanHeader(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
-    // Macro wedding hands banner with edge-to-edge bleed, padded from top status bar so hands are shifted lower and clear without being cut
+    // Macro wedding hands banner image with professional gradients
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(160.dp + statusBarTop)
+        .height(215.dp + statusBarTop)
     ) {
       AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -92,11 +97,11 @@ fun KhanHeader(
           .crossfade(true)
           .build(),
         contentDescription = "Royal bride and groom hands holding with mehndi and ring",
-        contentScale = ContentScale.Crop,
-        alignment = Alignment.BottomCenter,
+        contentScale = ContentScale.FillWidth,
+        alignment = Alignment.TopCenter,
         modifier = Modifier
-          .fillMaxSize()
-          .padding(top = (statusBarTop * 0.7f).coerceAtLeast(14.dp)),
+          .fillMaxWidth()
+          .padding(top = statusBarTop + 14.dp),
       )
 
       // Professional smooth bottom feather gradient
@@ -106,8 +111,8 @@ fun KhanHeader(
           .background(
             brush = Brush.verticalGradient(
               0f to Color.Transparent,
-              0.68f to Color.Transparent,
-              0.86f to RoyalBlack.copy(alpha = 0.45f),
+              0.76f to Color.Transparent,
+              0.90f to RoyalBlack.copy(alpha = 0.6f),
               1f to RoyalBlack
             )
           )
@@ -183,34 +188,34 @@ fun KhanHeader(
       text = "KHAN",
       fontFamily = FontFamily.Serif,
       fontWeight = FontWeight.Black,
-      fontSize = 31.sp,
-      letterSpacing = 6.sp,
+      fontSize = 28.sp,
+      letterSpacing = 5.sp,
       color = TextIvory,
       textAlign = TextAlign.Center,
-      modifier = Modifier.padding(top = 8.dp)
+      modifier = Modifier.padding(top = 4.dp)
     )
 
     Text(
       text = "MARRIAGE BUREAU",
       fontFamily = FontFamily.Serif,
       fontWeight = FontWeight.Bold,
-      fontSize = 12.sp,
-      letterSpacing = 3.5.sp,
+      fontSize = 11.5.sp,
+      letterSpacing = 3.sp,
       color = GoldPrimary,
       textAlign = TextAlign.Center,
-      modifier = Modifier.padding(top = 3.dp)
+      modifier = Modifier.padding(top = 2.dp)
     )
 
     JewelDivider(
-      modifier = Modifier.padding(vertical = 6.dp),
-      width = 195.dp
+      modifier = Modifier.padding(vertical = 4.dp),
+      width = 185.dp
     )
 
     Text(
       text = "Nikah Khoobsurat Rishton Ka Aaghaz",
       fontFamily = FontFamily.SansSerif,
       fontWeight = FontWeight.Medium,
-      fontSize = 12.5.sp,
+      fontSize = 12.sp,
       letterSpacing = 0.8.sp,
       color = GoldMuted,
       textAlign = TextAlign.Center
@@ -223,7 +228,7 @@ fun KhanHeader(
       } else {
         Box(
           modifier = Modifier
-            .padding(top = 10.dp)
+            .padding(top = 6.dp)
             .border(
               width = 1.dp,
               color = GoldPrimary.copy(alpha = 0.6f),
@@ -233,7 +238,7 @@ fun KhanHeader(
               color = RoyalBlack.copy(alpha = 0.8f),
               shape = RoundedCornerShape(50)
             )
-            .padding(horizontal = 24.dp, vertical = 5.dp)
+            .padding(horizontal = 22.dp, vertical = 4.dp)
         ) {
           Text(
             text = badgeTitle,

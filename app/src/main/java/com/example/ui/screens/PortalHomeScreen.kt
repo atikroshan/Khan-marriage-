@@ -25,10 +25,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.BuildConfig
@@ -96,17 +95,16 @@ fun PortalHomeScreen(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center
     ) {
-      // 1. New Registration Card (Matching Submit Button Horizontal Gold Gradient & Black Text)
+      // 1. New Registration Card (Square Shape size 140dp x 140dp, 1:1 Aspect Ratio)
       Box(
         modifier = Modifier
-          .width(200.dp)
-          .height(160.dp)
+          .size(140.dp)
           .testTag("new_registration_card")
-          .clip(RoundedCornerShape(22.dp))
+          .clip(RoundedCornerShape(4.dp))
           .border(
             width = 1.5.dp,
             color = GoldLight.copy(alpha = glowAlpha),
-            shape = RoundedCornerShape(22.dp)
+            shape = RoundedCornerShape(4.dp)
           )
           .background(
             brush = Brush.horizontalGradient(
@@ -114,88 +112,72 @@ fun PortalHomeScreen(
             )
           )
           .clickable { onNavigateToNewRegistration() }
-          .padding(14.dp),
+          .padding(horizontal = 8.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
       ) {
         Column(
           modifier = Modifier.fillMaxSize(),
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.SpaceBetween
+          verticalArrangement = Arrangement.Center
         ) {
-          // Top Icon Circle
+          // Top Icon Box
           Box(
             modifier = Modifier
-              .size(44.dp)
-              .clip(CircleShape)
+              .size(36.dp)
+              .clip(RoundedCornerShape(4.dp))
               .background(Color(0xFF141512))
-              .border(1.dp, Color(0xFF141512).copy(alpha = 0.5f), CircleShape),
+              .border(1.dp, Color(0xFF141512).copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
             contentAlignment = Alignment.Center
           ) {
             Icon(
               imageVector = Icons.Default.PersonAdd,
               contentDescription = "New Registration",
               tint = GoldLight,
-              modifier = Modifier.size(24.dp)
+              modifier = Modifier.size(18.dp)
             )
           }
 
-          // Text Content (Same text color as submit button: Color(0xFF141512))
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-          ) {
-            Text(
-              text = "New Registration",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Bold,
-              fontSize = 15.sp,
-              color = Color(0xFF141512),
-              letterSpacing = 0.5.sp
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-              text = "Establish Candidate Dossier",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Bold,
-              fontSize = 10.sp,
-              color = Color(0xFF141512).copy(alpha = 0.85f)
-            )
-          }
+          Spacer(modifier = Modifier.height(6.dp))
 
-          // Bottom Arrow Circle
-          Box(
-            modifier = Modifier
-              .size(28.dp)
-              .clip(CircleShape)
-              .background(Color(0xFF141512)),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-              contentDescription = "Proceed to registration",
-              tint = GoldLight,
-              modifier = Modifier.size(14.dp)
-            )
-          }
+          // Text Content
+          Text(
+            text = "NEW\nREGISTRATION",
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            color = Color(0xFF141512),
+            letterSpacing = 0.5.sp,
+            textAlign = TextAlign.Center,
+            lineHeight = 14.sp
+          )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Create Dossier",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 9.sp,
+            color = Color(0xFF141512).copy(alpha = 0.85f),
+            textAlign = TextAlign.Center
+          )
         }
       }
 
-      // Middle Jewel Divider between cards
+      // Middle Jewel Divider between cards (Equal vertical padding)
       JewelDivider(
         modifier = Modifier.padding(vertical = 16.dp),
-        width = 180.dp
+        width = 150.dp
       )
 
-      // 2. Search Profiles Card (Dark Emerald Gradient)
+      // 2. Search Profiles Card (Square Shape size 140dp x 140dp, 1:1 Aspect Ratio)
       Box(
         modifier = Modifier
-          .width(200.dp)
-          .height(160.dp)
+          .size(140.dp)
           .testTag("search_profiles_card")
-          .clip(RoundedCornerShape(22.dp))
+          .clip(RoundedCornerShape(4.dp))
           .border(
             width = 1.5.dp,
             color = GoldPrimary.copy(alpha = glowAlpha),
-            shape = RoundedCornerShape(22.dp)
+            shape = RoundedCornerShape(4.dp)
           )
           .background(
             brush = Brush.verticalGradient(
@@ -203,69 +185,53 @@ fun PortalHomeScreen(
             )
           )
           .clickable { onNavigateToSearchProfiles() }
-          .padding(14.dp),
+          .padding(horizontal = 8.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
       ) {
         Column(
           modifier = Modifier.fillMaxSize(),
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.SpaceBetween
+          verticalArrangement = Arrangement.Center
         ) {
-          // Top Icon Circle
+          // Top Icon Box
           Box(
             modifier = Modifier
-              .size(44.dp)
-              .clip(CircleShape)
+              .size(36.dp)
+              .clip(RoundedCornerShape(4.dp))
               .background(Color(0xFF05130D))
-              .border(1.dp, GoldPrimary.copy(alpha = 0.45f), CircleShape),
+              .border(1.dp, GoldPrimary.copy(alpha = 0.45f), RoundedCornerShape(4.dp)),
             contentAlignment = Alignment.Center
           ) {
             Icon(
               imageVector = Icons.Default.Search,
               contentDescription = "Search Profiles",
               tint = GoldLight,
-              modifier = Modifier.size(24.dp)
+              modifier = Modifier.size(18.dp)
             )
           }
+
+          Spacer(modifier = Modifier.height(6.dp))
 
           // Text Content
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally
-          ) {
-            Text(
-              text = "Search Profiles",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Bold,
-              fontSize = 15.sp,
-              color = Color(0xFFFAFAF6),
-              letterSpacing = 0.3.sp
-            )
-            Spacer(modifier = Modifier.height(3.dp))
-            Text(
-              text = "Explore Verified Matches",
-              fontFamily = FontFamily.SansSerif,
-              fontWeight = FontWeight.Medium,
-              fontSize = 10.sp,
-              color = TextSand
-            )
-          }
-
-          // Bottom Filter Tune Circle
-          Box(
-            modifier = Modifier
-              .size(28.dp)
-              .clip(CircleShape)
-              .background(Color(0xFF05130D))
-              .border(1.dp, GoldPrimary.copy(alpha = 0.4f), CircleShape),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Default.Tune,
-              contentDescription = "Filter profiles",
-              tint = GoldLight,
-              modifier = Modifier.size(14.dp)
-            )
-          }
+          Text(
+            text = "SEARCH\nPROFILES",
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 12.sp,
+            color = Color(0xFFFAFAF6),
+            letterSpacing = 0.5.sp,
+            textAlign = TextAlign.Center,
+            lineHeight = 14.sp
+          )
+          Spacer(modifier = Modifier.height(3.dp))
+          Text(
+            text = "Explore Matches",
+            fontFamily = FontFamily.SansSerif,
+            fontWeight = FontWeight.Medium,
+            fontSize = 9.sp,
+            color = TextSand,
+            textAlign = TextAlign.Center
+          )
         }
       }
     }

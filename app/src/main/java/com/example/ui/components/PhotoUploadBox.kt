@@ -195,6 +195,7 @@ fun PhotoUploadCard(
             .build(),
           contentDescription = title,
           contentScale = ContentScale.Crop,
+          alignment = Alignment.TopCenter,
           modifier = Modifier
             .fillMaxSize()
             .clip(RoundedCornerShape(10.dp))

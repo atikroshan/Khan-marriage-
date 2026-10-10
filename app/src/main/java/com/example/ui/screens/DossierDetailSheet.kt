@@ -154,6 +154,7 @@ fun DossierDetailSheet(
               .build(),
             contentDescription = "Front Portrait",
             contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
           )
           Box(
@@ -180,6 +181,7 @@ fun DossierDetailSheet(
               .build(),
             contentDescription = "Full Length",
             contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
             modifier = Modifier.fillMaxSize()
           )
           Box(
