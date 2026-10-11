@@ -218,11 +218,13 @@ fun GenderSelectionScreen(
         }
       }
 
-      // Middle Jewel Divider between Dulha and Dulhan
+      // Middle Jewel Divider between Dulha and Dulhan (15px / 15dp gap above & below)
+      Spacer(modifier = Modifier.height(15.dp))
       JewelDivider(
-        modifier = Modifier.padding(vertical = 10.dp),
+        modifier = Modifier.padding(vertical = 0.dp),
         width = 180.dp
       )
+      Spacer(modifier = Modifier.height(15.dp))
 
       // 2. DULHAN SECTION: Overlapping Bouncing Avatar + Rounded Corner Card
       Box(

@@ -97,11 +97,11 @@ fun DossierDropdownField(
         .fillMaxWidth()
         .height(48.dp)
         .testTag(testTag)
-        .clip(RoundedCornerShape(14.dp))
+        .clip(RoundedCornerShape(26.dp))
         .border(
           width = 1.dp,
           color = GoldLight.copy(alpha = 0.5f),
-          shape = RoundedCornerShape(14.dp)
+          shape = RoundedCornerShape(26.dp)
         )
         .background(
           color = androidx.compose.ui.graphics.Color(0xFF0F110F)

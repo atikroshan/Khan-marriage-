@@ -137,6 +137,7 @@ fun RegistrationFormScreen(
   // City Options as requested
   val cityOptions = listOf(
     "Solapur",
+    "Bijapur",
     "Mumbai",
     "Pune",
     "Akkalkot",
@@ -150,7 +151,7 @@ fun RegistrationFormScreen(
   )
 
   // Age Options (18 to 55)
-  val ageOptions = (18..55).map { "$it Years" }
+  val ageOptions = (18..55).map { "$it Years" } + listOf("55+ Years", "Other")
 
   // Marital Status Options
   val maritalOptions = listOf(
@@ -248,15 +249,14 @@ fun RegistrationFormScreen(
   )
 
   val avatarUrl = if (gender == "Dulhan") AppDatabase.DULHAN_IMAGE_URL else AppDatabase.DULHA_IMAGE_URL
-  val formSubtitle = "CANDIDATE DOSSIER FORM (${gender.uppercase()})"
-
+  
   Column(
     modifier = modifier.fillMaxSize()
   ) {
     // Top Header with Back button and Bureau branding (Edge-to-edge)
     KhanHeader(
       badgeTitle = "NEW REGISTRATION",
-      badgeSubtitle = formSubtitle,
+      badgeSubtitle = null,
       avatarUrl = avatarUrl,
       onAvatarClick = { onBack() },
       onBack = onBack,
@@ -269,7 +269,7 @@ fun RegistrationFormScreen(
         .fillMaxSize()
         .verticalScroll(rememberScrollState())
         .navigationBarsPadding()
-        .padding(horizontal = 20.dp, vertical = 12.dp),
+        .padding(horizontal = 20.dp, vertical = 6.dp),
       verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
       // 1. City / Location Dropdown
@@ -294,7 +294,7 @@ fun RegistrationFormScreen(
             Icon(Icons.Default.LocationCity, contentDescription = null, tint = GoldLight)
           },
           colors = blackTextFieldColors,
-          shape = RoundedCornerShape(14.dp),
+          shape = RoundedCornerShape(26.dp),
           modifier = Modifier
             .fillMaxWidth()
             .testTag("input_custom_city")
@@ -345,7 +345,7 @@ fun RegistrationFormScreen(
             Icon(Icons.Default.WorkOutline, contentDescription = null, tint = GoldLight)
           },
           colors = blackTextFieldColors,
-          shape = RoundedCornerShape(14.dp),
+          shape = RoundedCornerShape(26.dp),
           modifier = Modifier
             .fillMaxWidth()
             .testTag("input_custom_occupation")
@@ -374,7 +374,7 @@ fun RegistrationFormScreen(
             Icon(Icons.Default.School, contentDescription = null, tint = GoldLight)
           },
           colors = blackTextFieldColors,
-          shape = RoundedCornerShape(14.dp),
+          shape = RoundedCornerShape(26.dp),
           modifier = Modifier
             .fillMaxWidth()
             .testTag("input_custom_education")
@@ -429,7 +429,7 @@ fun RegistrationFormScreen(
               Icon(Icons.Default.Person, contentDescription = null, tint = GoldLight)
             },
             colors = blackTextFieldColors,
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(26.dp),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("input_candidate_name")
@@ -445,7 +445,7 @@ fun RegistrationFormScreen(
               Icon(Icons.Default.Phone, contentDescription = null, tint = GoldLight)
             },
             colors = blackTextFieldColors,
-            shape = RoundedCornerShape(14.dp),
+            shape = RoundedCornerShape(26.dp),
             modifier = Modifier
               .fillMaxWidth()
               .testTag("input_contact_phone")
@@ -470,7 +470,8 @@ fun RegistrationFormScreen(
           .fillMaxWidth()
           .height(52.dp)
           .testTag("submit_registration_button")
-          .clip(RoundedCornerShape(50))
+          .clip(RoundedCornerShape(26.dp))
+          .border(1.dp, GoldLight, RoundedCornerShape(26.dp))
           .background(
             brush = Brush.horizontalGradient(
               colors = listOf(GoldLight, GoldMedium, GoldDark)

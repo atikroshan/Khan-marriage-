@@ -139,6 +139,7 @@ fun SearchProfilesScreen(
   var selectedOccupationFilter by remember { mutableStateOf<String?>(null) }
   var selectedEducationFilter by remember { mutableStateOf<String?>(null) }
   var selectedComplexionFilter by remember { mutableStateOf<String?>(null) }
+  var selectedSummaryFilter by remember { mutableStateOf<String?>(null) }
 
   var showAgeFilterDialog by remember { mutableStateOf(false) }
   var showHeightFilterDialog by remember { mutableStateOf(false) }
@@ -152,9 +153,34 @@ fun SearchProfilesScreen(
   var showDeleteDialog by remember { mutableStateOf(false) }
   var showSheetSettingsDialog by remember { mutableStateOf(false) }
 
+  
+  val summaryItems = remember(dossiers, initialGender, selectedGenderTab) {
+    val baseList = dossiers.filter { dossier ->
+      if (initialGender != "All") {
+        dossier.gender.equals(initialGender, ignoreCase = true)
+      } else {
+        when (selectedGenderTab) {
+          "Dulhan" -> dossier.gender.equals("Dulhan", ignoreCase = true)
+          "Dulha" -> dossier.gender.equals("Dulha", ignoreCase = true)
+          else -> true
+        }
+      }
+    }
+    val counts = mutableMapOf<String, Int>()
+    baseList.forEach { d ->
+      if (d.occupation.isNotBlank()) {
+        counts[d.occupation] = (counts[d.occupation] ?: 0) + 1
+      }
+      if (d.education.isNotBlank()) {
+        counts[d.education] = (counts[d.education] ?: 0) + 1
+      }
+    }
+    counts.entries.sortedByDescending { it.value }.map { it.key to it.value }
+  }
+
   val hasActiveFilters = minAge != null || maxAge != null || minHeightInches != null || maxHeightInches != null ||
       selectedCityFilter != null || selectedMaritalStatusFilter != null || selectedOccupationFilter != null ||
-      selectedEducationFilter != null || selectedComplexionFilter != null
+      selectedEducationFilter != null || selectedComplexionFilter != null || searchQuery.isNotBlank()
 
   val filteredList = dossiers.filter { dossier ->
     val matchesGender = if (initialGender != "All") {
@@ -203,13 +229,18 @@ fun SearchProfilesScreen(
         dossier.education.contains(searchQuery, ignoreCase = true)
     }
 
+    val matchesSummary = if (selectedSummaryFilter == null) true else (
+      dossier.occupation.contains(selectedSummaryFilter!!, ignoreCase = true) ||
+        dossier.education.contains(selectedSummaryFilter!!, ignoreCase = true)
+    )
     matchesGender && matchesAge && matchesHeight && matchesCity && matchesMarital &&
-      matchesOccupation && matchesEducation && matchesComplexion && matchesQuery
+      matchesOccupation && matchesEducation && matchesComplexion && matchesQuery && matchesSummary
   }
 
   val quickCities = listOf(
     "All",
     "Solapur",
+    "Bijapur",
     "Mumbai",
     "Pune",
     "Akkalkot",
@@ -233,13 +264,13 @@ fun SearchProfilesScreen(
           .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
       ) {
-        // Regular Circular Back Button with Arrow
+        // Regular Circular Back Button with Arrow matching KhanHeader style
         Box(
           modifier = Modifier
-            .size(38.dp)
+            .size(42.dp)
             .clip(CircleShape)
-            .background(Color(0xFF141714))
-            .border(1.dp, GoldPrimary, CircleShape)
+            .background(RoyalBlack.copy(alpha = 0.88f))
+            .border(1.5.dp, GoldPrimary, CircleShape)
             .clickable { onBack() }
             .testTag("search_back_button"),
           contentAlignment = Alignment.Center
@@ -248,7 +279,7 @@ fun SearchProfilesScreen(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = "Back",
             tint = GoldLight,
-            modifier = Modifier.size(20.dp)
+            modifier = Modifier.size(22.dp)
           )
         }
 
@@ -276,27 +307,35 @@ fun SearchProfilesScreen(
           )
         }
 
-        // Gender Avatar (Moved to Right Side)
-        if (initialGender != "All") {
-          Spacer(modifier = Modifier.width(8.dp))
-          Box(
-            modifier = Modifier
-              .size(38.dp)
-              .clip(CircleShape)
-              .border(1.dp, GoldPrimary, CircleShape)
-              .background(SurfaceDark)
-          ) {
-            AsyncImage(
-              model = ImageRequest.Builder(LocalContext.current)
-                .data(if (initialGender.equals("Dulhan", true)) AppDatabase.DULHAN_IMAGE_URL else AppDatabase.DULHA_IMAGE_URL)
-                .crossfade(true)
-                .build(),
-              contentDescription = "Gender Avatar",
-              contentScale = ContentScale.Crop,
-              alignment = Alignment.TopCenter,
-              modifier = Modifier.fillMaxSize()
-            )
-          }
+        // Gender Avatar matching KhanHeader style copied from home selection
+        val effectiveGender = if (initialGender != "All") initialGender else selectedGenderTab
+        val avatarUrl = if (effectiveGender.equals("Dulhan", ignoreCase = true)) {
+          AppDatabase.DULHAN_IMAGE_URL
+        } else {
+          AppDatabase.DULHA_IMAGE_URL
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Box(
+          modifier = Modifier
+            .size(46.dp)
+            .clip(CircleShape)
+            .border(2.dp, GoldPrimary, CircleShape)
+            .border(4.dp, GoldPrimary.copy(alpha = 0.25f), CircleShape)
+            .background(RoyalBlack)
+            .clickable { onBack() }
+            .testTag("search_gender_avatar"),
+          contentAlignment = Alignment.Center
+        ) {
+          AsyncImage(
+            model = ImageRequest.Builder(LocalContext.current)
+              .data(avatarUrl)
+              .crossfade(true)
+              .build(),
+            contentDescription = "Selected Gender Avatar",
+            contentScale = ContentScale.Crop,
+            alignment = Alignment.TopCenter,
+            modifier = Modifier.fillMaxSize()
+          )
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -557,6 +596,59 @@ fun SearchProfilesScreen(
         }
       }
 
+      // Quick Category Filter Buttons
+      LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        val doctorCount = dossiers.count { it.occupation.contains("Doctor", ignoreCase = true) }
+        val teacherCount = dossiers.count { it.occupation.contains("Teacher", ignoreCase = true) }
+        val advocateCount = dossiers.count { it.occupation.contains("Advocate", ignoreCase = true) }
+        val tenthCount = dossiers.count { it.education.contains("10th", ignoreCase = true) }
+        val graduateCount = dossiers.count { it.education.contains("Graduate", ignoreCase = true) }
+
+        item {
+          CategoryFilterButton(
+            label = "Doctor",
+            count = doctorCount,
+            isSelected = selectedOccupationFilter == "Doctor",
+            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Doctor") null else "Doctor" }
+          )
+        }
+        item {
+          CategoryFilterButton(
+            label = "Teacher",
+            count = teacherCount,
+            isSelected = selectedOccupationFilter == "Teacher",
+            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Teacher") null else "Teacher" }
+          )
+        }
+        item {
+          CategoryFilterButton(
+            label = "Advocate",
+            count = advocateCount,
+            isSelected = selectedOccupationFilter == "Advocate",
+            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Advocate") null else "Advocate" }
+          )
+        }
+        item {
+          CategoryFilterButton(
+            label = "10th",
+            count = tenthCount,
+            isSelected = selectedEducationFilter == "10th",
+            onClick = { selectedEducationFilter = if (selectedEducationFilter == "10th") null else "10th" }
+          )
+        }
+        item {
+          CategoryFilterButton(
+            label = "Graduate",
+            count = graduateCount,
+            isSelected = selectedEducationFilter == "Graduate",
+            onClick = { selectedEducationFilter = if (selectedEducationFilter == "Graduate") null else "Graduate" }
+          )
+        }
+      }
+
       // Active Filter Badges with Quick Removal (✕)
       if (hasActiveFilters) {
         LazyRow(
@@ -629,7 +721,22 @@ fun SearchProfilesScreen(
       }
 
       // Profiles List
-      if (filteredList.isEmpty()) {
+      if (!hasActiveFilters) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .weight(1f)
+            .padding(top = 40.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          Text(
+            text = "Please apply filters to see candidates",
+            fontFamily = FontFamily.Serif,
+            fontSize = 15.sp,
+            color = TextSand
+          )
+        }
+      } else if (filteredList.isEmpty()) {
         Column(
           modifier = Modifier
             .fillMaxWidth()
@@ -645,7 +752,7 @@ fun SearchProfilesScreen(
           )
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-            text = "Try clearing your filters or register a new candidate dossier.",
+            text = "Try changing your filters.",
             fontSize = 12.sp,
             color = TextMuted
           )
@@ -977,7 +1084,8 @@ fun formatInchesToHeight(inches: Int): String {
 }
 
 val filterCityOptions = listOf(
-  "Solapur", "Mumbai", "Pune", "Akkalkot", "Pandharpur", "Sangli", "Satara", "Osmanabad", "Gulbarga", "Hyderabad"
+  "Solapur",
+    "Bijapur", "Mumbai", "Pune", "Akkalkot", "Pandharpur", "Sangli", "Satara", "Osmanabad", "Gulbarga", "Hyderabad"
 )
 
 val filterMaritalOptions = listOf(
@@ -1037,6 +1145,43 @@ fun ActiveFilterChip(
         )
       }
     }
+  }
+}
+
+@Composable
+fun CategoryFilterButton(
+  label: String,
+  count: Int,
+  isSelected: Boolean,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Box(
+    modifier = modifier
+      .height(42.dp)
+      .clip(RoundedCornerShape(12.dp))
+      .background(
+        if (isSelected) Brush.horizontalGradient(listOf(GoldLight, GoldMedium, GoldDark))
+        else Brush.horizontalGradient(listOf(Color(0xFF0F110F), Color(0xFF161916)))
+      )
+      .border(
+        width = if (isSelected) 1.5.dp else 1.dp,
+        color = if (isSelected) GoldLight else GoldLight.copy(alpha = 0.45f),
+        shape = RoundedCornerShape(12.dp)
+      )
+      .clickable { onClick() }
+      .padding(horizontal = 12.dp),
+    contentAlignment = Alignment.Center
+  ) {
+    Text(
+      text = "$label - $count",
+      fontFamily = FontFamily.SansSerif,
+      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+      fontSize = 11.5.sp,
+      color = if (isSelected) Color(0xFF141512) else TextIvory,
+      maxLines = 1,
+      overflow = TextOverflow.Ellipsis
+    )
   }
 }
 

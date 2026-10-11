@@ -43,6 +43,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.BuildConfig
+import com.example.data.AppDatabase
 import com.example.ui.components.JewelDivider
 import com.example.ui.components.KhanHeader
 import com.example.ui.theme.GoldDark
@@ -55,6 +56,7 @@ import com.example.ui.theme.TextSand
 
 @Composable
 fun PortalHomeScreen(
+  selectedGender: String = "Dulha",
   onNavigateToNewRegistration: () -> Unit,
   onNavigateToSearchProfiles: () -> Unit,
   onBack: (() -> Unit)? = null,
@@ -62,6 +64,12 @@ fun PortalHomeScreen(
 ) {
   if (onBack != null) {
     BackHandler { onBack() }
+  }
+
+  val avatarUrl = if (selectedGender.equals("Dulhan", ignoreCase = true)) {
+    AppDatabase.DULHAN_IMAGE_URL
+  } else {
+    AppDatabase.DULHA_IMAGE_URL
   }
 
   val infiniteTransition = rememberInfiniteTransition(label = "buttonGlow")
@@ -80,8 +88,10 @@ fun PortalHomeScreen(
     horizontalAlignment = Alignment.CenterHorizontally,
     verticalArrangement = Arrangement.SpaceBetween
   ) {
-    // Top Section: Header with Back button (Edge-to-edge full width)
+    // Top Section: Header with Back button and Selected Gender Avatar (Edge-to-edge full width)
     KhanHeader(
+      avatarUrl = avatarUrl,
+      onAvatarClick = onBack,
       onBack = onBack,
       modifier = Modifier.fillMaxWidth()
     )
@@ -100,11 +110,11 @@ fun PortalHomeScreen(
         modifier = Modifier
           .size(140.dp)
           .testTag("new_registration_card")
-          .clip(RoundedCornerShape(4.dp))
+          .clip(RoundedCornerShape(26.dp))
           .border(
             width = 1.5.dp,
             color = GoldLight.copy(alpha = glowAlpha),
-            shape = RoundedCornerShape(4.dp)
+            shape = RoundedCornerShape(26.dp)
           )
           .background(
             brush = Brush.horizontalGradient(
@@ -124,9 +134,9 @@ fun PortalHomeScreen(
           Box(
             modifier = Modifier
               .size(36.dp)
-              .clip(RoundedCornerShape(4.dp))
+              .clip(RoundedCornerShape(12.dp))
               .background(Color(0xFF141512))
-              .border(1.dp, Color(0xFF141512).copy(alpha = 0.5f), RoundedCornerShape(4.dp)),
+              .border(1.dp, Color(0xFF141512).copy(alpha = 0.5f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
           ) {
             Icon(
@@ -173,11 +183,11 @@ fun PortalHomeScreen(
         modifier = Modifier
           .size(140.dp)
           .testTag("search_profiles_card")
-          .clip(RoundedCornerShape(4.dp))
+          .clip(RoundedCornerShape(26.dp))
           .border(
             width = 1.5.dp,
             color = GoldPrimary.copy(alpha = glowAlpha),
-            shape = RoundedCornerShape(4.dp)
+            shape = RoundedCornerShape(26.dp)
           )
           .background(
             brush = Brush.verticalGradient(
@@ -197,9 +207,9 @@ fun PortalHomeScreen(
           Box(
             modifier = Modifier
               .size(36.dp)
-              .clip(RoundedCornerShape(4.dp))
+              .clip(RoundedCornerShape(12.dp))
               .background(Color(0xFF05130D))
-              .border(1.dp, GoldPrimary.copy(alpha = 0.45f), RoundedCornerShape(4.dp)),
+              .border(1.dp, GoldPrimary.copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
             contentAlignment = Alignment.Center
           ) {
             Icon(

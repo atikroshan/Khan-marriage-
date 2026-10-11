@@ -88,6 +88,7 @@ fun KhanApp(
           Box(modifier = Modifier.fillMaxSize()) {
             RosePetalsRainOverlay()
             PortalHomeScreen(
+              selectedGender = viewModel.selectedGenderForRegistration,
               onNavigateToNewRegistration = {
                 viewModel.navigateTo(KhanScreen.Registration(viewModel.selectedGenderForRegistration))
               },
@@ -119,10 +120,10 @@ fun KhanApp(
           RegistrationFormScreen(
             gender = screen.gender,
             onSubmitSuccess = {
-              viewModel.navigateTo(KhanScreen.SearchProfiles())
+              viewModel.navigateTo(KhanScreen.SearchProfiles(initialGender = screen.gender))
             },
             onNavigateToSearch = {
-              viewModel.navigateTo(KhanScreen.SearchProfiles())
+              viewModel.navigateTo(KhanScreen.SearchProfiles(initialGender = screen.gender))
             },
             onBack = {
               viewModel.navigateBack()

@@ -54,17 +54,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.R
-import com.example.data.AppDatabase
-import com.example.ui.theme.GoldBorder
 import com.example.ui.theme.GoldDark
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.GoldMedium
 import com.example.ui.theme.GoldMuted
-import com.example.ui.theme.GoldOutline
 import com.example.ui.theme.GoldPrimary
 import com.example.ui.theme.RoyalBlack
 import com.example.ui.theme.TextIvory
@@ -80,16 +76,18 @@ fun KhanHeader(
   onBack: (() -> Unit)? = null
 ) {
   val statusBarTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+  val isNewRegistration = badgeTitle?.contains("REGISTRATION", ignoreCase = true) == true
 
   Column(
     modifier = modifier.fillMaxWidth(),
     horizontalAlignment = Alignment.CenterHorizontally
   ) {
     // Macro wedding hands banner image with professional gradients
+    // Shifted upwards for New Registration so content sits cleanly higher
     Box(
       modifier = Modifier
         .fillMaxWidth()
-        .height(215.dp + statusBarTop)
+        .height(if (isNewRegistration) 180.dp + statusBarTop else 215.dp + statusBarTop)
     ) {
       AsyncImage(
         model = ImageRequest.Builder(LocalContext.current)
@@ -101,7 +99,7 @@ fun KhanHeader(
         alignment = Alignment.TopCenter,
         modifier = Modifier
           .fillMaxWidth()
-          .padding(top = statusBarTop + 14.dp),
+          .padding(top = statusBarTop + if (isNewRegistration) 4.dp else 14.dp),
       )
 
       // Professional smooth bottom feather gradient
@@ -156,7 +154,7 @@ fun KhanHeader(
         }
       }
 
-      // Optional avatar icon at top right (like in Image 1, with status bar top padding)
+      // Optional avatar icon at top right (with status bar top padding)
       if (avatarUrl != null) {
         Box(
           modifier = Modifier
@@ -183,60 +181,96 @@ fun KhanHeader(
       }
     }
 
-    // App Branding Typography (shifted down with scaled fonts)
-    Text(
-      text = "KHAN",
-      fontFamily = FontFamily.Serif,
-      fontWeight = FontWeight.Black,
-      fontSize = 28.sp,
-      letterSpacing = 5.sp,
-      color = TextIvory,
-      textAlign = TextAlign.Center,
-      modifier = Modifier.padding(top = 4.dp)
-    )
+    // App Branding Typography (Removed for New Registration as requested)
+    if (!isNewRegistration) {
+      Text(
+        text = "KHAN",
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.Black,
+        fontSize = 28.sp,
+        letterSpacing = 5.sp,
+        color = TextIvory,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(top = 4.dp)
+      )
 
-    Text(
-      text = "MARRIAGE BUREAU",
-      fontFamily = FontFamily.Serif,
-      fontWeight = FontWeight.Bold,
-      fontSize = 11.5.sp,
-      letterSpacing = 3.sp,
-      color = GoldPrimary,
-      textAlign = TextAlign.Center,
-      modifier = Modifier.padding(top = 2.dp)
-    )
+      Text(
+        text = "MARRIAGE BUREAU",
+        fontFamily = FontFamily.Serif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 11.5.sp,
+        letterSpacing = 3.sp,
+        color = GoldPrimary,
+        textAlign = TextAlign.Center,
+        modifier = Modifier.padding(top = 2.dp)
+      )
 
-    JewelDivider(
-      modifier = Modifier.padding(vertical = 4.dp),
-      width = 185.dp
-    )
+      JewelDivider(
+        modifier = Modifier.padding(vertical = 4.dp),
+        width = 185.dp
+      )
 
-    Text(
-      text = "Nikah Khoobsurat Rishton Ka Aaghaz",
-      fontFamily = FontFamily.SansSerif,
-      fontWeight = FontWeight.Medium,
-      fontSize = 12.sp,
-      letterSpacing = 0.8.sp,
-      color = GoldMuted,
-      textAlign = TextAlign.Center
-    )
+      Text(
+        text = "Nikah Khoobsurat Rishton Ka Aaghaz",
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Medium,
+        fontSize = 12.sp,
+        letterSpacing = 0.8.sp,
+        color = GoldMuted,
+        textAlign = TextAlign.Center
+      )
+    }
 
-    // Optional Mode Badge / Subtitle pill (with Animated Lens moving directly over search text)
+    // Optional Mode Badge / Subtitle pill
     if (badgeTitle != null) {
       if (badgeTitle.contains("SEARCH", ignoreCase = true)) {
         SearchProfileLensBadge(title = badgeTitle)
+      } else if (isNewRegistration) {
+        // NEW REGISTRATION: Golden background with Black text, 26dp rounded corner
+        Box(
+          modifier = Modifier
+            .padding(top = 4.dp, bottom = 2.dp)
+            .clip(RoundedCornerShape(26.dp))
+            .background(
+              brush = Brush.horizontalGradient(
+                colors = listOf(
+                  Color(0xFFF7DE9E),
+                  Color(0xFFE5B962),
+                  Color(0xFFD49B3E)
+                )
+              )
+            )
+            .border(
+              width = 1.dp,
+              color = GoldLight,
+              shape = RoundedCornerShape(26.dp)
+            )
+            .padding(horizontal = 26.dp, vertical = 7.dp)
+            .testTag("new_registration_badge")
+        ) {
+          Text(
+            text = badgeTitle,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            letterSpacing = 1.8.sp,
+            color = Color(0xFF141512), // Black text
+            textAlign = TextAlign.Center
+          )
+        }
       } else {
         Box(
           modifier = Modifier
             .padding(top = 6.dp)
+            .clip(RoundedCornerShape(26.dp))
             .border(
               width = 1.dp,
               color = GoldPrimary.copy(alpha = 0.6f),
-              shape = RoundedCornerShape(50)
+              shape = RoundedCornerShape(26.dp)
             )
             .background(
               color = RoyalBlack.copy(alpha = 0.8f),
-              shape = RoundedCornerShape(50)
+              shape = RoundedCornerShape(26.dp)
             )
             .padding(horizontal = 22.dp, vertical = 4.dp)
         ) {
@@ -252,7 +286,8 @@ fun KhanHeader(
         }
       }
 
-      if (badgeSubtitle != null) {
+      // Do NOT show subtitle for NEW REGISTRATION, as requested: "aur uske niche ki line candidate ... nika doa"
+      if (badgeSubtitle != null && !isNewRegistration) {
         Text(
           text = badgeSubtitle,
           fontFamily = FontFamily.SansSerif,
@@ -275,7 +310,6 @@ fun SearchProfileLensBadge(
 ) {
   val infiniteTransition = rememberInfiniteTransition(label = "searchLensBadge")
 
-  // Lens sweep animation: Middle (0.5f) -> Left (0.08f) -> Right (0.92f) -> Middle (0.5f)
   val lensSweepFraction by infiniteTransition.animateFloat(
     initialValue = 0.5f,
     targetValue = 0.5f,
@@ -315,7 +349,7 @@ fun SearchProfileLensBadge(
   BoxWithConstraints(
     modifier = modifier
       .padding(top = 10.dp)
-      .clip(RoundedCornerShape(50))
+      .clip(RoundedCornerShape(26.dp))
       .background(
         brush = Brush.horizontalGradient(
           listOf(
@@ -324,7 +358,7 @@ fun SearchProfileLensBadge(
             RoyalBlack.copy(alpha = 0.95f)
           )
         ),
-        shape = RoundedCornerShape(50)
+        shape = RoundedCornerShape(26.dp)
       )
       .border(
         width = 1.dp,
@@ -335,7 +369,7 @@ fun SearchProfileLensBadge(
             GoldPrimary.copy(alpha = 0.45f)
           )
         ),
-        shape = RoundedCornerShape(50)
+        shape = RoundedCornerShape(26.dp)
       )
       .padding(horizontal = 26.dp, vertical = 6.dp)
       .testTag("search_profile_animated_badge"),
@@ -376,6 +410,7 @@ fun SearchProfileLensBadge(
 
     // 3. Golden Magnifying Lens Moving Directly Over the Text
     val lensPosX = badgeWidth * lensSweepFraction
+
     Box(
       modifier = Modifier
         .align(Alignment.CenterStart)
@@ -440,6 +475,7 @@ fun SearchProfileLensBadge(
         // Gold Handle angled down-right
         val handleStart = Offset(centerOffset.x + (radius * 0.7f), centerOffset.y + (radius * 0.7f))
         val handleEnd = Offset(size.width * 0.86f, size.height * 0.86f)
+
         drawLine(
           brush = Brush.linearGradient(listOf(GoldLight, GoldDark)),
           start = handleStart,
