@@ -1,13 +1,22 @@
 package com.example.ui.screens
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -33,6 +42,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Business
@@ -47,9 +57,13 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocationCity
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Palette
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.Verified
@@ -68,6 +82,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -80,6 +95,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.launch
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -98,10 +114,12 @@ import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.data.AppDatabase
 import com.example.data.CandidateDossier
+import com.example.data.SentProfilesHistoryManager
 import com.example.ui.components.JewelDivider
 import com.example.ui.theme.EmeraldBorder
 import com.example.ui.theme.EmeraldContainer
 import com.example.ui.theme.EmeraldDark
+import com.example.ui.theme.EmeraldLight
 import com.example.ui.theme.GoldDark
 import com.example.ui.theme.GoldLight
 import com.example.ui.theme.GoldMedium
@@ -150,8 +168,38 @@ fun SearchProfilesScreen(
   var showComplexionFilterDialog by remember { mutableStateOf(false) }
 
   var selectedDossierForDetail by remember { mutableStateOf<CandidateDossier?>(null) }
+  var selectedDossierIds by remember { mutableStateOf(setOf<Long>()) }
+  var showProceedDialog by remember { mutableStateOf(false) }
   var showDeleteDialog by remember { mutableStateOf(false) }
   var showSheetSettingsDialog by remember { mutableStateOf(false) }
+
+  var registeredClientPhone by remember { mutableStateOf("") }
+  var isRepeatModeAllowed by remember { mutableStateOf(false) } // false = Naye Profiles (New Only), true = Repeat Allowed
+  var historyRefreshKey by remember { mutableStateOf(0) }
+
+  val sentCodesForClient = remember(registeredClientPhone, historyRefreshKey) {
+    SentProfilesHistoryManager.getSentProfileCodes(context, registeredClientPhone)
+  }
+
+  fun isProfileRepeat(dossier: CandidateDossier): Boolean {
+    return SentProfilesHistoryManager.isProfileCodeRepeat(sentCodesForClient, dossier.dossierCode)
+  }
+
+  fun setRepeatMode(allowed: Boolean) {
+    isRepeatModeAllowed = allowed
+    if (!allowed && sentCodesForClient.isNotEmpty()) {
+      val repeatIds = dossiers.filter { isProfileRepeat(it) }.map { it.id }.toSet()
+      val unselectedCount = selectedDossierIds.intersect(repeatIds).size
+      selectedDossierIds = selectedDossierIds - repeatIds
+      if (unselectedCount > 0) {
+        Toast.makeText(
+          context,
+          "$unselectedCount repeat profile unselect kar diye gaye (Sirf naye profiles select honge)",
+          Toast.LENGTH_SHORT
+        ).show()
+      }
+    }
+  }
 
   
   val summaryItems = remember(dossiers, initialGender, selectedGenderTab) {
@@ -213,10 +261,55 @@ fun SearchProfilesScreen(
       else dossier.maritalStatus.contains(selectedMaritalStatusFilter!!, ignoreCase = true)
 
     val matchesOccupation = if (selectedOccupationFilter == null || selectedOccupationFilter == "All") true 
-      else dossier.occupation.contains(selectedOccupationFilter!!, ignoreCase = true)
+      else if (selectedOccupationFilter == "Software") {
+        dossier.occupation.contains("Software", ignoreCase = true) ||
+        dossier.occupation.contains("Developer", ignoreCase = true) ||
+        dossier.occupation.contains("Programmer", ignoreCase = true) ||
+        dossier.occupation.contains("Engineer", ignoreCase = true)
+      } else if (selectedOccupationFilter == "Advocate") {
+        dossier.occupation.contains("Advocate", ignoreCase = true) ||
+        dossier.occupation.contains("Lawyer", ignoreCase = true)
+      } else if (selectedOccupationFilter == "Business") {
+        dossier.occupation.contains("Business", ignoreCase = true) ||
+        dossier.occupation.contains("Trader", ignoreCase = true)
+      } else if (selectedOccupationFilter == "Govt") {
+        dossier.occupation.contains("Govt", ignoreCase = true) ||
+        dossier.occupation.contains("Government", ignoreCase = true)
+      } else if (selectedOccupationFilter == "Bank") {
+        dossier.occupation.contains("Bank", ignoreCase = true)
+      } else dossier.occupation.contains(selectedOccupationFilter!!, ignoreCase = true)
 
     val matchesEducation = if (selectedEducationFilter == null || selectedEducationFilter == "All") true 
-      else dossier.education.contains(selectedEducationFilter!!, ignoreCase = true)
+      else if (selectedEducationFilter == "Master") {
+        dossier.education.contains("Master", ignoreCase = true) ||
+        dossier.education.contains("M.Sc", ignoreCase = true) ||
+        dossier.education.contains("MCA", ignoreCase = true) ||
+        dossier.education.contains("MBA", ignoreCase = true) ||
+        dossier.education.contains("M.Tech", ignoreCase = true) ||
+        dossier.education.contains("M.E", ignoreCase = true) ||
+        dossier.education.contains("Post", ignoreCase = true)
+      } else if (selectedEducationFilter == "Graduate") {
+        dossier.education.contains("Graduate", ignoreCase = true) ||
+        dossier.education.contains("Degree", ignoreCase = true) ||
+        dossier.education.contains("B.A", ignoreCase = true) ||
+        dossier.education.contains("B.Com", ignoreCase = true) ||
+        dossier.education.contains("B.Sc", ignoreCase = true) ||
+        dossier.education.contains("B.E", ignoreCase = true) ||
+        dossier.education.contains("B.Tech", ignoreCase = true) ||
+        dossier.education.contains("BBA", ignoreCase = true) ||
+        dossier.education.contains("BCA", ignoreCase = true)
+      } else if (selectedEducationFilter == "12th") {
+        dossier.education.contains("12th", ignoreCase = true) ||
+        dossier.education.contains("HSC", ignoreCase = true) ||
+        dossier.education.contains("Intermediate", ignoreCase = true)
+      } else if (selectedEducationFilter == "10th") {
+        dossier.education.contains("10th", ignoreCase = true) ||
+        dossier.education.contains("SSC", ignoreCase = true) ||
+        dossier.education.contains("Matric", ignoreCase = true)
+      } else if (selectedEducationFilter == "Diploma") {
+        dossier.education.contains("Diploma", ignoreCase = true) ||
+        dossier.education.contains("Polytechnic", ignoreCase = true)
+      } else dossier.education.contains(selectedEducationFilter!!, ignoreCase = true)
 
     val matchesComplexion = if (selectedComplexionFilter == null || selectedComplexionFilter == "All") true 
       else dossier.complexion.contains(selectedComplexionFilter!!, ignoreCase = true)
@@ -343,6 +436,206 @@ fun SearchProfilesScreen(
         }
       }
 
+      // 0. Registered Client Mobile Number Input & History Tracker (At Top of Search Screen)
+      Card(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 14.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF131713)),
+        border = BorderStroke(1.2.dp, if (sentCodesForClient.isNotEmpty()) GoldPrimary else GoldPrimary.copy(alpha = 0.45f))
+      ) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp)
+        ) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(
+                imageVector = Icons.Default.Phone,
+                contentDescription = null,
+                tint = GoldLight,
+                modifier = Modifier.size(16.dp)
+              )
+              Spacer(modifier = Modifier.width(6.dp))
+              Text(
+                text = "Registered Client Mobile Number",
+                fontWeight = FontWeight.Bold,
+                fontSize = 12.5.sp,
+                color = GoldLight
+              )
+            }
+            if (registeredClientPhone.isNotBlank()) {
+              Text(
+                text = "Clear",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Color(0xFFFF9E9E),
+                modifier = Modifier
+                  .clickable { registeredClientPhone = "" }
+                  .padding(4.dp)
+              )
+            }
+          }
+
+          Spacer(modifier = Modifier.height(6.dp))
+
+          OutlinedTextField(
+            value = registeredClientPhone,
+            onValueChange = { input -> registeredClientPhone = input },
+            placeholder = {
+              Text("Enter 10-digit mobile (e.g. 9876543210)", fontSize = 11.5.sp, color = TextMuted)
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            shape = RoundedCornerShape(10.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+              focusedBorderColor = GoldLight,
+              unfocusedBorderColor = GoldPrimary.copy(alpha = 0.4f),
+              focusedTextColor = TextIvory,
+              unfocusedTextColor = TextIvory,
+              focusedContainerColor = Color(0xFF1A201A),
+              unfocusedContainerColor = Color(0xFF1A201A)
+            ),
+            trailingIcon = {
+              if (registeredClientPhone.isBlank()) {
+                Text(
+                  text = "Demo: 9876543210",
+                  fontSize = 10.sp,
+                  color = GoldLight,
+                  fontWeight = FontWeight.Bold,
+                  modifier = Modifier
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(Color(0xFF2B220C))
+                    .clickable { registeredClientPhone = "9876543210" }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+                )
+              }
+            },
+            modifier = Modifier
+              .fillMaxWidth()
+              .testTag("input_registered_client_mobile")
+          )
+
+          // History and Toggle (shows immediately when phone is entered)
+          if (registeredClientPhone.trim().length >= 7) {
+            Spacer(modifier = Modifier.height(8.dp))
+            HorizontalDivider(color = GoldPrimary.copy(alpha = 0.2f), thickness = 0.8.dp)
+            Spacer(modifier = Modifier.height(6.dp))
+
+            if (sentCodesForClient.isNotEmpty()) {
+              Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+              ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                  Icon(
+                    imageVector = Icons.Default.History,
+                    contentDescription = null,
+                    tint = GoldPrimary,
+                    modifier = Modifier.size(14.dp)
+                  )
+                  Spacer(modifier = Modifier.width(4.dp))
+                  Text(
+                    text = "Abhi tak bheje gaye profiles: ${sentCodesForClient.size} Total",
+                    fontSize = 11.5.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = GoldLight
+                  )
+                }
+              }
+
+              Spacer(modifier = Modifier.height(4.dp))
+
+              LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.fillMaxWidth()
+              ) {
+                items(sentCodesForClient.toList()) { code ->
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(6.dp))
+                      .background(Color(0xFF2B2510))
+                      .border(1.dp, GoldPrimary.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                    .padding(horizontal = 7.dp, vertical = 2.dp)
+                  ) {
+                    Text(
+                      text = "Profile #$code",
+                      fontSize = 10.5.sp,
+                      fontWeight = FontWeight.SemiBold,
+                      color = GoldLight
+                    )
+                  }
+                }
+              }
+            } else {
+              Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Check, contentDescription = null, tint = EmeraldLight, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                  text = "Naya Client: Abhi tak 0 profile bheji gayi hai",
+                  fontSize = 11.sp,
+                  color = EmeraldLight
+                )
+              }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Two-Option Toggle Button: [✨ Naye Profiles (New)] vs [🔄 Repeat Bhejein]
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(10.dp))
+                .background(Color(0xFF0D120E))
+                .border(1.dp, GoldPrimary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+                .padding(4.dp),
+              horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+              Box(
+                modifier = Modifier
+                  .weight(1f)
+                  .height(34.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(if (!isRepeatModeAllowed) GoldPrimary else Color.Transparent)
+                  .clickable { setRepeatMode(false) },
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  text = "✨ Naye Profiles (New)",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (!isRepeatModeAllowed) TextDark else TextSand
+                )
+              }
+
+              Box(
+                modifier = Modifier
+                  .weight(1f)
+                  .height(34.dp)
+                  .clip(RoundedCornerShape(8.dp))
+                  .background(if (isRepeatModeAllowed) Color(0xFFD4AF37) else Color.Transparent)
+                  .clickable { setRepeatMode(true) },
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  text = "🔄 Repeat Bhejein",
+                  fontSize = 11.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (isRepeatModeAllowed) TextDark else TextSand
+                )
+              }
+            }
+          }
+        }
+      }
+
       // Search Bar with Small Animation Effect
       OutlinedTextField(
         value = searchQuery,
@@ -400,11 +693,17 @@ fun SearchProfilesScreen(
             modifier = Modifier
               .size(7.dp)
               .clip(CircleShape)
-              .background(GoldPrimary.copy(alpha = 0.8f))
+              .background(if (hasActiveFilters) GoldPrimary.copy(alpha = 0.8f) else GoldMuted.copy(alpha = 0.5f))
           )
           Spacer(modifier = Modifier.width(6.dp))
           Text(
-            text = if (searchQuery.isNotBlank()) "Searching \"$searchQuery\"" else "Exploring ${if (initialGender != "All") initialGender else if (selectedGenderTab == "All") "All" else selectedGenderTab} Matches",
+            text = if (searchQuery.isNotBlank()) {
+              "Searching \"$searchQuery\""
+            } else if (hasActiveFilters) {
+              "Filtered ${if (initialGender != "All") initialGender else if (selectedGenderTab == "All") "All" else selectedGenderTab} Matches"
+            } else {
+              "Select a filter to view ${if (initialGender != "All") initialGender else if (selectedGenderTab == "All") "All" else selectedGenderTab} profiles"
+            },
             fontSize = 11.sp,
             color = GoldMuted,
             fontWeight = FontWeight.Medium
@@ -412,20 +711,23 @@ fun SearchProfilesScreen(
         }
 
         AnimatedContent(
-          targetState = filteredList.size,
+          targetState = if (hasActiveFilters) filteredList.size else 0,
           label = "CountAnimation"
         ) { count ->
           Text(
-            text = "$count Profiles",
+            text = if (hasActiveFilters) "$count Profiles" else "0 Profiles",
             fontSize = 11.sp,
             fontWeight = FontWeight.Bold,
-            color = GoldLight
+            color = if (hasActiveFilters) GoldLight else TextMuted
           )
         }
       }
 
       // Gender Category Tabs: "All", "Dulhan (Brides)", "Dulha (Grooms)"
       if (initialGender == "All") {
+        val dulhanCount = dossiers.count { it.gender.equals("Dulhan", ignoreCase = true) }
+        val dulhaCount = dossiers.count { it.gender.equals("Dulha", ignoreCase = true) }
+
         Row(
           modifier = Modifier
             .fillMaxWidth()
@@ -435,19 +737,34 @@ fun SearchProfilesScreen(
           GenderFilterPill(
             title = "All Profiles (${dossiers.size})",
             isSelected = selectedGenderTab == "All",
-            onClick = { selectedGenderTab = "All" },
+            onClick = {
+              selectedGenderTab = "All"
+              selectedOccupationFilter = null
+              selectedEducationFilter = null
+              selectedDossierIds = emptySet()
+            },
             modifier = Modifier.weight(1f)
           )
           GenderFilterPill(
-            title = "Dulhan (Brides)",
+            title = "Dulhan ($dulhanCount)",
             isSelected = selectedGenderTab == "Dulhan",
-            onClick = { selectedGenderTab = "Dulhan" },
+            onClick = {
+              selectedGenderTab = "Dulhan"
+              selectedOccupationFilter = null
+              selectedEducationFilter = null
+              selectedDossierIds = emptySet()
+            },
             modifier = Modifier.weight(1f)
           )
           GenderFilterPill(
-            title = "Dulha (Grooms)",
+            title = "Dulha ($dulhaCount)",
             isSelected = selectedGenderTab == "Dulha",
-            onClick = { selectedGenderTab = "Dulha" },
+            onClick = {
+              selectedGenderTab = "Dulha"
+              selectedOccupationFilter = null
+              selectedEducationFilter = null
+              selectedDossierIds = emptySet()
+            },
             modifier = Modifier.weight(1f)
           )
         }
@@ -596,56 +913,157 @@ fun SearchProfilesScreen(
         }
       }
 
-      // Quick Category Filter Buttons
-      LazyRow(
-        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        val doctorCount = dossiers.count { it.occupation.contains("Doctor", ignoreCase = true) }
-        val teacherCount = dossiers.count { it.occupation.contains("Teacher", ignoreCase = true) }
-        val advocateCount = dossiers.count { it.occupation.contains("Advocate", ignoreCase = true) }
-        val tenthCount = dossiers.count { it.education.contains("10th", ignoreCase = true) }
-        val graduateCount = dossiers.count { it.education.contains("Graduate", ignoreCase = true) }
+        // Dynamic Category Lists for current gender
+      val currentGenderDossiers = remember(dossiers, initialGender, selectedGenderTab) {
+        dossiers.filter { dossier ->
+          if (initialGender != "All") {
+            dossier.gender.equals(initialGender, ignoreCase = true)
+          } else {
+            when (selectedGenderTab) {
+              "Dulhan" -> dossier.gender.equals("Dulhan", ignoreCase = true)
+              "Dulha" -> dossier.gender.equals("Dulha", ignoreCase = true)
+              else -> true
+            }
+          }
+        }
+      }
 
-        item {
-          CategoryFilterButton(
-            label = "Doctor",
-            count = doctorCount,
-            isSelected = selectedOccupationFilter == "Doctor",
-            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Doctor") null else "Doctor" }
-          )
+      val occupationCategories = remember(currentGenderDossiers) {
+        val standard = listOf(
+          CategoryFilterItem("Teacher", "Teacher", currentGenderDossiers.count { it.occupation.contains("Teacher", ignoreCase = true) }),
+          CategoryFilterItem("Doctor", "Doctor", currentGenderDossiers.count { it.occupation.contains("Doctor", ignoreCase = true) }),
+          CategoryFilterItem(
+            "Software/IT",
+            "Software",
+            currentGenderDossiers.count {
+              it.occupation.contains("Software", ignoreCase = true) ||
+              it.occupation.contains("Developer", ignoreCase = true) ||
+              it.occupation.contains("Programmer", ignoreCase = true) ||
+              it.occupation.contains("Engineer", ignoreCase = true)
+            }
+          ),
+          CategoryFilterItem("Advocate", "Advocate", currentGenderDossiers.count { it.occupation.contains("Advocate", ignoreCase = true) || it.occupation.contains("Lawyer", ignoreCase = true) }),
+          CategoryFilterItem("Business", "Business", currentGenderDossiers.count { it.occupation.contains("Business", ignoreCase = true) || it.occupation.contains("Trader", ignoreCase = true) }),
+          CategoryFilterItem("Govt Job", "Govt", currentGenderDossiers.count { it.occupation.contains("Govt", ignoreCase = true) || it.occupation.contains("Government", ignoreCase = true) }),
+          CategoryFilterItem("Banker", "Bank", currentGenderDossiers.count { it.occupation.contains("Bank", ignoreCase = true) })
+        ).filter { it.count > 0 }
+
+        val knownOccKeys = listOf("teacher", "doctor", "software", "developer", "programmer", "engineer", "advocate", "lawyer", "business", "trader", "govt", "government", "bank")
+        val others = currentGenderDossiers
+          .map { it.occupation.trim() }
+          .filter { occ -> occ.isNotBlank() && knownOccKeys.none { key -> occ.contains(key, ignoreCase = true) } }
+          .groupingBy { it }
+          .eachCount()
+          .map { (occ, count) ->
+            val label = if (occ.length > 18) occ.take(16) + "…" else occ
+            CategoryFilterItem(label, occ, count)
+          }
+        standard + others
+      }
+
+      val educationCategories = remember(currentGenderDossiers) {
+        val standard = listOf(
+          CategoryFilterItem(
+            "Post Graduate / M.Sc",
+            "Master",
+            currentGenderDossiers.count {
+              it.education.contains("Master", ignoreCase = true) ||
+              it.education.contains("M.Sc", ignoreCase = true) ||
+              it.education.contains("MCA", ignoreCase = true) ||
+              it.education.contains("MBA", ignoreCase = true) ||
+              it.education.contains("M.Tech", ignoreCase = true) ||
+              it.education.contains("M.E", ignoreCase = true) ||
+              it.education.contains("Post", ignoreCase = true)
+            }
+          ),
+          CategoryFilterItem(
+            "Graduate / B.A / B.Com",
+            "Graduate",
+            currentGenderDossiers.count {
+              it.education.contains("Graduate", ignoreCase = true) ||
+              it.education.contains("Degree", ignoreCase = true) ||
+              it.education.contains("B.A", ignoreCase = true) ||
+              it.education.contains("B.Com", ignoreCase = true) ||
+              it.education.contains("B.Sc", ignoreCase = true) ||
+              it.education.contains("B.E", ignoreCase = true) ||
+              it.education.contains("B.Tech", ignoreCase = true) ||
+              it.education.contains("BBA", ignoreCase = true) ||
+              it.education.contains("BCA", ignoreCase = true)
+            }
+          ),
+          CategoryFilterItem("12th Pass", "12th", currentGenderDossiers.count { it.education.contains("12th", ignoreCase = true) || it.education.contains("HSC", ignoreCase = true) || it.education.contains("Intermediate", ignoreCase = true) }),
+          CategoryFilterItem("10th Pass", "10th", currentGenderDossiers.count { it.education.contains("10th", ignoreCase = true) || it.education.contains("SSC", ignoreCase = true) || it.education.contains("Matric", ignoreCase = true) }),
+          CategoryFilterItem("Diploma", "Diploma", currentGenderDossiers.count { it.education.contains("Diploma", ignoreCase = true) || it.education.contains("Polytechnic", ignoreCase = true) })
+        ).filter { it.count > 0 }
+
+        val knownEduKeys = listOf("master", "m.sc", "mca", "mba", "m.tech", "m.e", "post", "graduate", "degree", "b.a", "b.com", "b.sc", "b.e", "b.tech", "bba", "bca", "12th", "hsc", "intermediate", "10th", "ssc", "matric", "diploma", "polytechnic")
+        val others = currentGenderDossiers
+          .map { it.education.trim() }
+          .filter { edu -> edu.isNotBlank() && knownEduKeys.none { key -> edu.contains(key, ignoreCase = true) } }
+          .groupingBy { it }
+          .eachCount()
+          .map { (edu, count) ->
+            val label = if (edu.length > 18) edu.take(16) + "…" else edu
+            CategoryFilterItem(label, edu, count)
+          }
+        standard + others
+      }
+
+      // Row 1: Profession / Occupation Filter Buttons (Only shown if candidates exist in Google Drive/DB)
+      if (occupationCategories.isNotEmpty()) {
+        Column(modifier = Modifier.padding(top = 2.dp, bottom = 2.dp)) {
+          Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(Icons.Default.WorkOutline, contentDescription = null, tint = GoldLight, modifier = Modifier.size(13.dp))
+            Spacer(modifier = Modifier.width(5.dp))
+            Text("Profession / Occupation", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSand)
+          }
+          LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            items(occupationCategories, key = { "occ_${it.filterKey}" }) { cat ->
+              CategoryFilterButton(
+                label = cat.label,
+                count = cat.count,
+                isSelected = selectedOccupationFilter == cat.filterKey,
+                onClick = {
+                  selectedOccupationFilter = if (selectedOccupationFilter == cat.filterKey) null else cat.filterKey
+                }
+              )
+            }
+          }
         }
-        item {
-          CategoryFilterButton(
-            label = "Teacher",
-            count = teacherCount,
-            isSelected = selectedOccupationFilter == "Teacher",
-            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Teacher") null else "Teacher" }
-          )
-        }
-        item {
-          CategoryFilterButton(
-            label = "Advocate",
-            count = advocateCount,
-            isSelected = selectedOccupationFilter == "Advocate",
-            onClick = { selectedOccupationFilter = if (selectedOccupationFilter == "Advocate") null else "Advocate" }
-          )
-        }
-        item {
-          CategoryFilterButton(
-            label = "10th",
-            count = tenthCount,
-            isSelected = selectedEducationFilter == "10th",
-            onClick = { selectedEducationFilter = if (selectedEducationFilter == "10th") null else "10th" }
-          )
-        }
-        item {
-          CategoryFilterButton(
-            label = "Graduate",
-            count = graduateCount,
-            isSelected = selectedEducationFilter == "Graduate",
-            onClick = { selectedEducationFilter = if (selectedEducationFilter == "Graduate") null else "Graduate" }
-          )
+      }
+
+      // Row 2: Education Filter Buttons (Only shown if candidates exist in Google Drive/DB)
+      if (educationCategories.isNotEmpty()) {
+        Column(modifier = Modifier.padding(top = 2.dp, bottom = 4.dp)) {
+          Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+            verticalAlignment = Alignment.CenterVertically
+          ) {
+            Icon(Icons.Default.School, contentDescription = null, tint = GoldLight, modifier = Modifier.size(13.dp))
+            Spacer(modifier = Modifier.width(5.dp))
+            Text("Education / Qualification", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = TextSand)
+          }
+          LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            items(educationCategories, key = { "edu_${it.filterKey}" }) { cat ->
+              CategoryFilterButton(
+                label = cat.label,
+                count = cat.count,
+                isSelected = selectedEducationFilter == cat.filterKey,
+                onClick = {
+                  selectedEducationFilter = if (selectedEducationFilter == cat.filterKey) null else cat.filterKey
+                }
+              )
+            }
+          }
         }
       }
 
@@ -720,20 +1138,44 @@ fun SearchProfilesScreen(
         }
       }
 
-      // Profiles List
+      // Profiles List (Only shown when a filter or search is active)
       if (!hasActiveFilters) {
         Column(
           modifier = Modifier
             .fillMaxWidth()
             .weight(1f)
-            .padding(top = 40.dp),
+            .padding(top = 40.dp, start = 24.dp, end = 24.dp),
           horizontalAlignment = Alignment.CenterHorizontally
         ) {
+          Box(
+            modifier = Modifier
+              .size(54.dp)
+              .clip(CircleShape)
+              .background(Color(0xFF1E1A11))
+              .border(1.2.dp, GoldPrimary.copy(alpha = 0.5f), CircleShape),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              imageVector = Icons.Default.Tune,
+              contentDescription = null,
+              tint = GoldLight,
+              modifier = Modifier.size(26.dp)
+            )
+          }
+          Spacer(modifier = Modifier.height(14.dp))
           Text(
-            text = "Please apply filters to see candidates",
+            text = "Filter select karein",
             fontFamily = FontFamily.Serif,
-            fontSize = 15.sp,
-            color = TextSand
+            fontWeight = FontWeight.Bold,
+            fontSize = 16.sp,
+            color = GoldLight
+          )
+          Spacer(modifier = Modifier.height(6.dp))
+          Text(
+            text = "Profiles dekhne ke liye uppar se koi Profession, Education ya Filter select karein.",
+            fontSize = 12.5.sp,
+            color = TextSand,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
           )
         }
       } else if (filteredList.isEmpty()) {
@@ -745,14 +1187,14 @@ fun SearchProfilesScreen(
           horizontalAlignment = Alignment.CenterHorizontally
         ) {
           Text(
-            text = "No matching candidate dossiers found",
+            text = if (dossiers.isEmpty()) "Koi profile uplabdh nahi hai" else "No matching candidate dossiers found",
             fontFamily = FontFamily.Serif,
             fontSize = 15.sp,
             color = TextSand
           )
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-            text = "Try changing your filters.",
+            text = "Try changing your selected filters or search terms.",
             fontSize = 12.sp,
             color = TextMuted
           )
@@ -775,12 +1217,32 @@ fun SearchProfilesScreen(
           modifier = Modifier
             .fillMaxWidth()
             .weight(1f),
-          contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 80.dp),
+          contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 90.dp),
           verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
           items(filteredList, key = { it.id }) { dossier ->
+            val isSelected = selectedDossierIds.contains(dossier.id)
+            val isRepeat = isProfileRepeat(dossier)
             DossierCard(
               dossier = dossier,
+              isSelected = isSelected,
+              isRepeat = isRepeat,
+              repeatModeAllowed = isRepeatModeAllowed,
+              onToggleSelect = {
+                if (!isSelected && isRepeat && !isRepeatModeAllowed) {
+                  Toast.makeText(
+                    context,
+                    "Profile #${dossier.dossierCode} pehle bheja gaya hai! Ise bhejne ke liye 'Repeat Bhejein' mode ON karein.",
+                    Toast.LENGTH_SHORT
+                  ).show()
+                } else {
+                  selectedDossierIds = if (isSelected) {
+                    selectedDossierIds - dossier.id
+                  } else {
+                    selectedDossierIds + dossier.id
+                  }
+                }
+              },
               onClick = { selectedDossierForDetail = dossier }
             )
           }
@@ -1057,6 +1519,128 @@ fun SearchProfilesScreen(
         onDismiss = { showComplexionFilterDialog = false }
       )
     }
+
+    // Docked Bottom Proceed Bar when candidate profiles are selected
+    AnimatedVisibility(
+      visible = selectedDossierIds.isNotEmpty(),
+      enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
+      exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
+      modifier = Modifier
+        .align(Alignment.BottomCenter)
+        .padding(bottom = 12.dp, start = 16.dp, end = 16.dp)
+    ) {
+      Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = Color(0xFF141914),
+        border = BorderStroke(1.5.dp, GoldPrimary),
+        shadowElevation = 10.dp
+      ) {
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            val selectedList = dossiers.filter { selectedDossierIds.contains(it.id) }
+            val repeatCount = selectedList.count { isProfileRepeat(it) }
+            val newCount = selectedList.size - repeatCount
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                text = "${selectedDossierIds.size} Selected",
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.5.sp,
+                color = GoldLight
+              )
+              if (repeatCount > 0) {
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                  text = "($newCount New, $repeatCount Repeat)",
+                  fontSize = 10.5.sp,
+                  color = if (isRepeatModeAllowed) GoldLight else Color(0xFFFFB4B4),
+                  fontWeight = FontWeight.SemiBold
+                )
+              }
+            }
+
+            val selectedCodes = selectedList.joinToString(", ") { it.dossierCode }
+            Text(
+              text = if (isRepeatModeAllowed) "Mode: Repeat Allowed • $selectedCodes" else "Mode: New Only • $selectedCodes",
+              fontSize = 10.sp,
+              color = TextSand,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis
+            )
+          }
+
+          Spacer(modifier = Modifier.width(8.dp))
+
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            Text(
+              text = "Clear",
+              color = Color(0xFFFF9E9E),
+              fontSize = 12.sp,
+              fontWeight = FontWeight.SemiBold,
+              modifier = Modifier
+                .clickable { selectedDossierIds = emptySet() }
+                .padding(horizontal = 6.dp, vertical = 6.dp)
+            )
+
+            Button(
+              onClick = { showProceedDialog = true },
+              colors = ButtonDefaults.buttonColors(
+                containerColor = GoldPrimary,
+                contentColor = TextDark
+              ),
+              shape = RoundedCornerShape(12.dp),
+              contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+              modifier = Modifier.testTag("button_proceed_selection")
+            ) {
+              Text("Proceed", fontWeight = FontWeight.Bold, fontSize = 12.5.sp)
+              Spacer(modifier = Modifier.width(4.dp))
+              Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp)
+              )
+            }
+          }
+        }
+      }
+    }
+
+    // Modal Bottom Sheet: Proceed and Send to WhatsApp
+    if (showProceedDialog) {
+      val selectedDossierList = dossiers.filter { selectedDossierIds.contains(it.id) }
+      ProceedShareDialog(
+        initialPhoneNumber = registeredClientPhone,
+        selectedProfiles = selectedDossierList,
+        initialRepeatModeAllowed = isRepeatModeAllowed,
+        isProfileRepeat = { isProfileRepeat(it) },
+        onToggleProfile = { id ->
+          selectedDossierIds = if (selectedDossierIds.contains(id)) {
+            selectedDossierIds - id
+          } else {
+            selectedDossierIds + id
+          }
+        },
+        onDismiss = { showProceedDialog = false },
+        onSendWhatsApp = { phone, profiles ->
+          sendProfilesViaWhatsApp(context, phone, profiles)
+          SentProfilesHistoryManager.saveSentProfileCodes(context, phone, profiles.map { it.dossierCode })
+          historyRefreshKey++
+          showProceedDialog = false
+          selectedDossierIds = emptySet()
+          Toast.makeText(context, "${profiles.size} profiles WhatsApp par bheje gaye! History update ho gayi.", Toast.LENGTH_LONG).show()
+        }
+      )
+    }
   }
 }
 
@@ -1158,7 +1742,7 @@ fun CategoryFilterButton(
 ) {
   Box(
     modifier = modifier
-      .height(42.dp)
+      .height(48.dp)
       .clip(RoundedCornerShape(12.dp))
       .background(
         if (isSelected) Brush.horizontalGradient(listOf(GoldLight, GoldMedium, GoldDark))
@@ -1170,18 +1754,30 @@ fun CategoryFilterButton(
         shape = RoundedCornerShape(12.dp)
       )
       .clickable { onClick() }
-      .padding(horizontal = 12.dp),
+      .padding(horizontal = 14.dp, vertical = 2.dp),
     contentAlignment = Alignment.Center
   ) {
-    Text(
-      text = "$label - $count",
-      fontFamily = FontFamily.SansSerif,
-      fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-      fontSize = 11.5.sp,
-      color = if (isSelected) Color(0xFF141512) else TextIvory,
-      maxLines = 1,
-      overflow = TextOverflow.Ellipsis
-    )
+    Column(
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center
+    ) {
+      Text(
+        text = label,
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+        fontSize = 11.5.sp,
+        color = if (isSelected) Color(0xFF141512) else TextIvory,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+      Text(
+        text = "$count ${if (count == 1) "profile" else "profiles"}",
+        fontFamily = FontFamily.SansSerif,
+        fontWeight = FontWeight.Bold,
+        fontSize = 9.5.sp,
+        color = if (isSelected) Color(0xFF141512).copy(alpha = 0.85f) else GoldLight
+      )
+    }
   }
 }
 
@@ -1736,6 +2332,10 @@ fun GenderFilterPill(
 @Composable
 fun DossierCard(
   dossier: CandidateDossier,
+  isSelected: Boolean = false,
+  isRepeat: Boolean = false,
+  repeatModeAllowed: Boolean = false,
+  onToggleSelect: () -> Unit = {},
   onClick: () -> Unit,
   modifier: Modifier = Modifier
 ) {
@@ -1745,11 +2345,11 @@ fun DossierCard(
   Card(
     shape = RoundedCornerShape(18.dp),
     colors = CardDefaults.cardColors(
-      containerColor = if (isDulhan) Color(0xFF0B1711).copy(alpha = 0.92f) else Color(0xFF131512).copy(alpha = 0.92f)
+      containerColor = if (isSelected) Color(0xFF1B221B) else if (isDulhan) Color(0xFF0B1711).copy(alpha = 0.92f) else Color(0xFF131512).copy(alpha = 0.92f)
     ),
     border = androidx.compose.foundation.BorderStroke(
-      1.dp,
-      if (isDulhan) EmeraldBorder.copy(alpha = 0.7f) else GoldPrimary.copy(alpha = 0.35f)
+      if (isSelected) 1.5.dp else 1.dp,
+      if (isSelected) GoldLight else if (isRepeat && !repeatModeAllowed) Color(0xFFFF9E9E).copy(alpha = 0.7f) else if (isDulhan) EmeraldBorder.copy(alpha = 0.7f) else GoldPrimary.copy(alpha = 0.35f)
     ),
     modifier = modifier
       .fillMaxWidth()
@@ -1762,6 +2362,33 @@ fun DossierCard(
         .padding(12.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
+      // Selection Tick Mark Circle
+      Box(
+        modifier = Modifier
+          .size(38.dp)
+          .clip(CircleShape)
+          .background(if (isSelected) GoldPrimary else Color(0xFF181E18))
+          .border(
+            1.5.dp,
+            if (isSelected) GoldLight else if (isRepeat && !repeatModeAllowed) Color(0xFFFF8B8B) else GoldLight.copy(alpha = 0.45f),
+            CircleShape
+          )
+          .clickable { onToggleSelect() }
+          .testTag("select_dossier_${dossier.dossierCode}"),
+        contentAlignment = Alignment.Center
+      ) {
+        if (isSelected) {
+          Icon(
+            imageVector = Icons.Default.Check,
+            contentDescription = "Selected",
+            tint = TextDark,
+            modifier = Modifier.size(19.dp)
+          )
+        }
+      }
+
+      Spacer(modifier = Modifier.width(10.dp))
+
       // Candidate Portrait Avatar
       Box(
         modifier = Modifier
@@ -1792,19 +2419,43 @@ fun DossierCard(
         modifier = Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(3.dp)
       ) {
-        // Dossier Code & Gender Badge
+        // Dossier Code, Repeat Badge & Gender Badge
         Row(
           modifier = Modifier.fillMaxWidth(),
           horizontalArrangement = Arrangement.SpaceBetween,
           verticalAlignment = Alignment.CenterVertically
         ) {
-          Text(
-            text = dossier.dossierCode,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Bold,
-            fontSize = 13.sp,
-            color = GoldLight
-          )
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+              text = dossier.dossierCode,
+              fontFamily = FontFamily.Serif,
+              fontWeight = FontWeight.Bold,
+              fontSize = 13.sp,
+              color = GoldLight
+            )
+
+            if (isRepeat) {
+              Spacer(modifier = Modifier.width(5.dp))
+              Box(
+                modifier = Modifier
+                  .clip(RoundedCornerShape(6.dp))
+                  .background(if (repeatModeAllowed) Color(0xFF352B09) else Color(0xFF331616))
+                  .border(
+                    1.dp,
+                    if (repeatModeAllowed) GoldPrimary else Color(0xFFFF7070),
+                    RoundedCornerShape(6.dp)
+                  )
+                  .padding(horizontal = 5.dp, vertical = 2.dp)
+              ) {
+                Text(
+                  text = if (repeatModeAllowed) "🔄 Repeat" else "⚠️ Pehle Bheja Gaya",
+                  fontSize = 8.5.sp,
+                  fontWeight = FontWeight.Bold,
+                  color = if (repeatModeAllowed) GoldLight else Color(0xFFFFB4B4)
+                )
+              }
+            }
+          }
 
           Box(
             modifier = Modifier
@@ -1821,7 +2472,7 @@ fun DossierCard(
               text = dossier.gender,
               fontSize = 9.sp,
               fontWeight = FontWeight.Bold,
-              color = if (isDulhan) GoldLight else GoldLight
+              color = GoldLight
             )
           }
         }
@@ -1878,5 +2529,442 @@ fun DossierCard(
         )
       }
     }
+  }
+}
+
+// Category Filter Data Model
+data class CategoryFilterItem(
+  val label: String,
+  val filterKey: String,
+  val count: Int
+)
+
+// Proceed and Send to WhatsApp Dialog
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ProceedShareDialog(
+  initialPhoneNumber: String = "",
+  selectedProfiles: List<CandidateDossier>,
+  initialRepeatModeAllowed: Boolean = false,
+  isProfileRepeat: (CandidateDossier) -> Boolean = { false },
+  onToggleProfile: (Long) -> Unit,
+  onDismiss: () -> Unit,
+  onSendWhatsApp: (String, List<CandidateDossier>) -> Unit
+) {
+  val context = LocalContext.current
+  var phoneNumber by remember(initialPhoneNumber) { mutableStateOf(initialPhoneNumber) }
+  var phoneError by remember { mutableStateOf(false) }
+  var repeatModeAllowed by remember(initialRepeatModeAllowed) { mutableStateOf(initialRepeatModeAllowed) }
+
+  val sentCodes = remember(phoneNumber) {
+    SentProfilesHistoryManager.getSentProfileCodes(context, phoneNumber)
+  }
+
+  fun checkRepeat(profile: CandidateDossier): Boolean {
+    return isProfileRepeat(profile) || SentProfilesHistoryManager.isProfileCodeRepeat(sentCodes, profile.dossierCode)
+  }
+
+  val activeProfilesToSend = remember(selectedProfiles, repeatModeAllowed, sentCodes) {
+    if (repeatModeAllowed) {
+      selectedProfiles
+    } else {
+      selectedProfiles.filterNot { checkRepeat(it) }
+    }
+  }
+
+  ModalBottomSheet(
+    onDismissRequest = onDismiss,
+    containerColor = Color(0xFF101411),
+    shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 20.dp, vertical = 8.dp)
+        .padding(bottom = 32.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+      // Header
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Column {
+          Text(
+            text = "Send Profiles via WhatsApp",
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Bold,
+            fontSize = 17.sp,
+            color = GoldLight
+          )
+          Text(
+            text = "Khan Marriage Bureau • ${selectedProfiles.size} Profiles Selected",
+            fontSize = 11.5.sp,
+            color = TextSand
+          )
+        }
+        IconButton(onClick = onDismiss) {
+          Icon(Icons.Default.Close, contentDescription = "Close", tint = GoldLight)
+        }
+      }
+
+      HorizontalDivider(color = GoldPrimary.copy(alpha = 0.25f))
+
+      // WhatsApp Mobile Number Input Field
+      Column {
+        Text(
+          text = "Registered WhatsApp Mobile Number:",
+          fontSize = 12.sp,
+          fontWeight = FontWeight.SemiBold,
+          color = TextSand
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        OutlinedTextField(
+          value = phoneNumber,
+          onValueChange = {
+            phoneNumber = it
+            phoneError = false
+          },
+          placeholder = { Text("e.g. 9812345678 or +91 9812345678", color = TextMuted, fontSize = 12.5.sp) },
+          leadingIcon = {
+            Icon(Icons.Default.Phone, contentDescription = null, tint = GoldLight, modifier = Modifier.size(18.dp))
+          },
+          singleLine = true,
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+          colors = OutlinedTextFieldDefaults.colors(
+            focusedBorderColor = GoldLight,
+            unfocusedBorderColor = GoldPrimary.copy(alpha = 0.45f),
+            focusedTextColor = TextIvory,
+            unfocusedTextColor = TextIvory,
+            cursorColor = GoldPrimary
+          ),
+          shape = RoundedCornerShape(12.dp),
+          modifier = Modifier
+            .fillMaxWidth()
+            .testTag("input_whatsapp_phone")
+        )
+        if (phoneError) {
+          Text(
+            text = "Please enter a valid mobile number",
+            fontSize = 11.sp,
+            color = Color(0xFFFF8B8B),
+            modifier = Modifier.padding(top = 4.dp, start = 4.dp)
+          )
+        }
+      }
+
+      // History summary for this number
+      if (phoneNumber.trim().length >= 7) {
+        if (sentCodes.isNotEmpty()) {
+          Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1B1F17)),
+            border = BorderStroke(1.dp, GoldPrimary.copy(alpha = 0.5f))
+          ) {
+            Column(modifier = Modifier.padding(10.dp)) {
+              Text(
+                text = "📋 Abhi tak bheje gaye: ${sentCodes.size} Profiles (${sentCodes.joinToString(", ") { "#$it" }})",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = GoldLight
+              )
+            }
+          }
+        } else {
+          Text(
+            text = "✨ Naya Number: Pehle 0 profiles bheje gaye hain",
+            fontSize = 11.sp,
+            color = EmeraldLight
+          )
+        }
+      }
+
+      // Dispatch Mode Toggle (New vs Repeat)
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(10.dp))
+          .background(Color(0xFF0D120E))
+          .border(1.dp, GoldPrimary.copy(alpha = 0.35f), RoundedCornerShape(10.dp))
+          .padding(4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
+      ) {
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (!repeatModeAllowed) GoldPrimary else Color.Transparent)
+            .clickable { repeatModeAllowed = false },
+          contentAlignment = Alignment.Center
+        ) {
+          Text(
+            text = "✨ Naye Profiles (New Only)",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (!repeatModeAllowed) TextDark else TextSand
+          )
+        }
+
+        Box(
+          modifier = Modifier
+            .weight(1f)
+            .height(34.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(if (repeatModeAllowed) Color(0xFFD4AF37) else Color.Transparent)
+            .clickable { repeatModeAllowed = true },
+          contentAlignment = Alignment.Center
+        ) {
+          Text(
+            text = "🔄 Repeat Bhejein (Allow All)",
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Bold,
+            color = if (repeatModeAllowed) TextDark else TextSand
+          )
+        }
+      }
+
+      // Selected Profiles List with select/unselect capability
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = "Selected Profiles (${selectedProfiles.size}):",
+          fontSize = 12.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = GoldLight
+        )
+        Text(
+          text = if (!repeatModeAllowed) "Sirf naye profiles select honge" else "Tap checkbox to toggle",
+          fontSize = 10.5.sp,
+          color = TextSand
+        )
+      }
+
+      if (selectedProfiles.isEmpty()) {
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp),
+          contentAlignment = Alignment.Center
+        ) {
+          Text(
+            text = "No profiles currently selected. Select profiles from list.",
+            color = TextSand,
+            fontSize = 12.sp
+          )
+        }
+      } else {
+        LazyColumn(
+          modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(max = 210.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          items(selectedProfiles, key = { it.id }) { profile ->
+            val isRepeat = checkRepeat(profile)
+            val isIncluded = repeatModeAllowed || !isRepeat
+
+            Row(
+              modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(12.dp))
+                .background(if (isIncluded) Color(0xFF171D17) else Color(0xFF1C1313))
+                .border(
+                  1.dp,
+                  if (!isIncluded) Color(0xFFFF6B6B).copy(alpha = 0.5f) else GoldPrimary.copy(alpha = 0.35f),
+                  RoundedCornerShape(12.dp)
+                )
+                .clickable {
+                  if (isIncluded) {
+                    onToggleProfile(profile.id)
+                  } else {
+                    repeatModeAllowed = true
+                  }
+                }
+                .padding(10.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+              Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                // Checkbox
+                Box(
+                  modifier = Modifier
+                    .size(26.dp)
+                    .clip(CircleShape)
+                    .background(if (isIncluded) GoldPrimary else Color(0xFF3A2020)),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Icon(
+                    imageVector = if (isIncluded) Icons.Default.Check else Icons.Default.Close,
+                    contentDescription = null,
+                    tint = if (isIncluded) TextDark else Color(0xFFFF9E9E),
+                    modifier = Modifier.size(16.dp)
+                  )
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column {
+                  Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                      text = profile.dossierCode,
+                      fontWeight = FontWeight.Bold,
+                      fontSize = 12.sp,
+                      color = GoldLight
+                    )
+                    if (isRepeat) {
+                      Spacer(modifier = Modifier.width(5.dp))
+                      Box(
+                        modifier = Modifier
+                          .clip(RoundedCornerShape(4.dp))
+                          .background(if (isIncluded) Color(0xFF352B09) else Color(0xFF351616))
+                          .border(1.dp, if (isIncluded) GoldPrimary else Color(0xFFFF6B6B), RoundedCornerShape(4.dp))
+                          .padding(horizontal = 4.dp, vertical = 1.dp)
+                      ) {
+                        Text(
+                          text = if (isIncluded) "🔄 Repeat" else "⚠️ Pehle Bheja Gaya (Excluded)",
+                          fontSize = 8.5.sp,
+                          fontWeight = FontWeight.Bold,
+                          color = if (isIncluded) GoldLight else Color(0xFFFFB4B4)
+                        )
+                      }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                      text = profile.candidateName,
+                      fontWeight = FontWeight.SemiBold,
+                      fontSize = 12.5.sp,
+                      color = TextIvory
+                    )
+                  }
+                  Text(
+                    text = "${profile.gender} • ${profile.age} Yrs • ${profile.city} • ${profile.occupation}",
+                    fontSize = 10.sp,
+                    color = TextSand,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Summary Count Badge & WhatsApp Send Button
+      Row(
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(10.dp))
+          .background(Color(0xFF1C221C))
+          .padding(horizontal = 12.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Text(
+          text = if (repeatModeAllowed) "Total to Send (All):" else "Total to Send (New Only):",
+          fontSize = 11.5.sp,
+          color = TextSand
+        )
+        Text(
+          "${activeProfilesToSend.size} Profiles (${activeProfilesToSend.joinToString(", ") { it.dossierCode }})",
+          fontSize = 11.5.sp,
+          fontWeight = FontWeight.Bold,
+          color = GoldLight
+        )
+      }
+
+      Button(
+        onClick = {
+          if (phoneNumber.trim().length < 7) {
+            phoneError = true
+          } else if (activeProfilesToSend.isEmpty()) {
+            Toast.makeText(context, "Koi naya profile select nahi hai. Repeat allow karne ke liye 'Repeat Bhejein' mode chunein.", Toast.LENGTH_LONG).show()
+          } else {
+            onSendWhatsApp(phoneNumber.trim(), activeProfilesToSend)
+          }
+        },
+        enabled = activeProfilesToSend.isNotEmpty(),
+        colors = ButtonDefaults.buttonColors(
+          containerColor = Color(0xFF25D366),
+          contentColor = Color.White
+        ),
+        shape = RoundedCornerShape(14.dp),
+        modifier = Modifier
+          .fillMaxWidth()
+          .height(48.dp)
+          .testTag("button_send_whatsapp")
+      ) {
+        Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(17.dp))
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+          text = "Send ${activeProfilesToSend.size} Profiles on WhatsApp",
+          fontWeight = FontWeight.Bold,
+          fontSize = 13.5.sp
+        )
+      }
+    }
+  }
+}
+
+// WhatsApp Dispatch Intent Function
+fun sendProfilesViaWhatsApp(
+  context: Context,
+  phoneNumber: String,
+  profiles: List<CandidateDossier>
+) {
+  if (profiles.isEmpty()) return
+
+  val cleanPhone = phoneNumber.replace(Regex("[^0-9]"), "")
+  val targetPhone = if (cleanPhone.length == 10) "91$cleanPhone" else cleanPhone
+
+  val sb = StringBuilder()
+  sb.append("✨ *KHAN MARRIAGE BUREAU* ✨\n")
+  sb.append("Shortlisted Candidate Profiles\n\n")
+  sb.append("📋 *Total Profiles:* ${profiles.size}\n")
+  sb.append("🔢 *Profile Codes:* ${profiles.joinToString(", ") { it.dossierCode }}\n")
+  sb.append("━━━━━━━━━━━━━━━━━━━━\n\n")
+
+  profiles.forEachIndexed { index, p ->
+    sb.append("${index + 1}️⃣ *Profile No: ${p.dossierCode}*\n")
+    sb.append("• *Name:* ${p.candidateName} (${p.gender})\n")
+    sb.append("• *Age & Height:* ${p.age} Yrs • ${p.height}\n")
+    sb.append("• *City:* ${p.city}\n")
+    sb.append("• *Profession:* ${p.occupation}\n")
+    sb.append("• *Education:* ${p.education}\n")
+    sb.append("• *Marital Status:* ${p.maritalStatus}\n")
+    if (p.complexion.isNotBlank()) {
+      sb.append("• *Complexion:* ${p.complexion}\n")
+    }
+    sb.append("\n")
+  }
+
+  sb.append("━━━━━━━━━━━━━━━━━━━━\n")
+  sb.append("Kindly reply with the profile numbers you would like to proceed with.")
+
+  val encodedMsg = Uri.encode(sb.toString())
+  val uriString = if (targetPhone.isNotBlank()) {
+    "https://api.whatsapp.com/send?phone=$targetPhone&text=$encodedMsg"
+  } else {
+    "https://api.whatsapp.com/send?text=$encodedMsg"
+  }
+
+  val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uriString))
+  try {
+    context.startActivity(intent)
+  } catch (e: Exception) {
+    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+      type = "text/plain"
+      putExtra(Intent.EXTRA_TEXT, sb.toString())
+    }
+    context.startActivity(Intent.createChooser(shareIntent, "Send Profiles via"))
   }
 }

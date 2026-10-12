@@ -33,6 +33,7 @@ val EmeraldContainer = Color(0xFF0E271C)
 val EmeraldDeep = Color(0xFF071710)
 val EmeraldBorder = Color(0xFF2D4D3C)
 val EmeraldAccent = Color(0xFF1B4D3E)
+val EmeraldLight = Color(0xFF81C784)
 
 // Jewel Accent Red (Ruby / Maroon)
 val RubyJewel = Color(0xFF8A1B1E)
