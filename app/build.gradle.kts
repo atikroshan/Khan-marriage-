@@ -16,8 +16,8 @@ android {
     applicationId = "com.aistudio.khanmarriagebureau.kmbrz"
     minSdk = 24
     targetSdk = 36
-    versionCode = 10
-    versionName = "0.0.10"
+    versionCode = 12
+    versionName = "0.0.12"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }

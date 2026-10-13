@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.School
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -83,7 +84,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun DossierDetailSheet(
   dossier: CandidateDossier?,
-  onDismiss: () -> Unit
+  onDismiss: () -> Unit,
+  onSendWhatsApp: (CandidateDossier) -> Unit
 ) {
   if (dossier == null) return
 
@@ -142,21 +144,13 @@ fun DossierDetailSheet(
 
         Row(verticalAlignment = Alignment.CenterVertically) {
           IconButton(
-            onClick = {
-              val shareText = "Khan Marriage Bureau Dossier:\nCandidate ID: ${dossier.dossierCode}\nGender: ${dossier.gender}\nAge: ${dossier.age} Yrs\nCity: ${dossier.city}\nEducation: ${dossier.education}\nOccupation: ${dossier.occupation}"
-              val sendIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_TEXT, shareText)
-                type = "text/plain"
-              }
-              context.startActivity(Intent.createChooser(sendIntent, "Share Dossier Summary"))
-            },
-            modifier = Modifier.testTag("share_dossier_button")
+            onClick = { onSendWhatsApp(dossier) },
+            modifier = Modifier.testTag("send_whatsapp_dossier_button")
           ) {
             Icon(
-              imageVector = Icons.Default.Share,
-              contentDescription = "Share",
-              tint = GoldLight
+              imageVector = Icons.Default.Send, // Or use a WhatsApp icon if available
+              contentDescription = "Send via WhatsApp",
+              tint = Color(0xFF25D366) // WhatsApp green
             )
           }
 
